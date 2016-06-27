@@ -92,7 +92,7 @@ class VSGServiceAdmin(ReadOnlyAwareAdmin):
     suit_form_includes = (('vcpeadmin.html', 'top', 'administration'),
                            ) #('hpctools.html', 'top', 'tools') )
 
-    def queryset(self, request):
+    def get_queryset(self, request):
         return VSGService.get_service_objects_by_user(request.user)
 
 class VSGTenantForm(forms.ModelForm):
@@ -143,7 +143,7 @@ class VSGTenantAdmin(ReadOnlyAwareAdmin):
 
     suit_form_tabs = (('general','Details'),)
 
-    def queryset(self, request):
+    def get_queryset(self, request):
         return VSGTenant.get_tenant_objects_by_user(request.user)
 
 
