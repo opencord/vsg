@@ -11,8 +11,14 @@ from synchronizers.base.ansible import run_template_ssh
 from synchronizers.base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
 from core.models import Service, Slice, Tag
 from services.vsg.models import VSGService, VSGTenant
-from services.hpc.models import HpcService, CDNPrefix
 from xos.logger import Logger, logging
+
+# Deal with configurations where the hpc service is not onboarded
+try:
+    from services.hpc.models import HpcService, CDNPrefix
+    hpc_service_onboarded=True
+except:
+    hpc_service_onboarded=False
 
 # hpclibrary will be in steps/..
 parentdir = os.path.join(os.path.dirname(__file__),"..")
@@ -75,7 +81,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
             if len(lines)>=2:
                 dnsdemux_ip = lines[0].strip()
                 cdn_prefixes = [x.strip() for x in lines[1:] if x.strip()]
-        else:
+        elif hpc_service_onboarded:
             # automatic CDN configuiration
             #    it learns everything from CDN objects in XOS
             #    not tested on pod.
