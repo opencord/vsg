@@ -10,6 +10,7 @@
       dnsdemux_ip: {{ dnsdemux_ip }}
       firewall_enable: {{ firewall_enable }}
       url_filter_enable: {{ url_filter_enable }}
+      docker_image_name: {{ docker_image_name }}
       c_tags:
         {% for c_tag in c_tags %}
         - {{ c_tag }}
