@@ -15,13 +15,13 @@ VCPE=vcpe-$STAG-$CTAG
 docker inspect $VCPE > /dev/null 2>&1
 if [ "$?" == 1 ]
 then
-    docker pull andybavier/docker-vcpe
+    docker pull {{ docker_remote_image_name }}
     docker run -d --name=$VCPE --privileged=true --net=none \
     -v /var/container_volumes/$VCPE/mount:/mount:ro \
     -v /var/container_volumes/$VCPE/etc/dnsmasq.d:/etc/dnsmasq.d:ro \
     -v /var/container_volumes/$VCPE/etc/service/message:/etc/service/message \
     -v /var/container_volumes/$VCPE/usr/local/sbin:/usr/local/sbin:ro \
-    andybavier/docker-vcpe
+    {{ docker_local_image_name }}
 else
     docker start $VCPE
 fi
