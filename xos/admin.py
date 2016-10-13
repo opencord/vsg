@@ -31,6 +31,8 @@ class VSGServiceForm(forms.ModelForm):
     dns_servers = forms.CharField(required=False)
     url_filter_kind = forms.ChoiceField(choices=VSGService.URL_FILTER_KIND_CHOICES, required=False)
     node_label = forms.CharField(required=False)
+    docker_image_name = forms.CharField(required=False)
+    docker_insecure_registry = forms.BooleanField(required=False)
 
     def __init__(self,*args,**kwargs):
         super (VSGServiceForm,self ).__init__(*args,**kwargs)
@@ -43,6 +45,8 @@ class VSGServiceForm(forms.ModelForm):
             self.fields['dns_servers'].initial = self.instance.dns_servers
             self.fields['url_filter_kind']. initial = self.instance.url_filter_kind
             self.fields['node_label'].initial = self.instance.node_label
+            self.fields['docker_image_name'].initial = self.instance.docker_image_name
+            self.fields['docker_insecure_registry'].initial = self.instance.docker_insecure_registry
 
     def save(self, commit=True):
         self.instance.bbs_api_hostname = self.cleaned_data.get("bbs_api_hostname")
@@ -53,6 +57,8 @@ class VSGServiceForm(forms.ModelForm):
         self.instance.dns_servers = self.cleaned_data.get("dns_servers")
         self.instance.url_filter_kind = self.cleaned_data.get("url_filter_kind")
         self.instance.node_label = self.cleaned_data.get("node_label")
+        self.instance.docker_image_name = self.cleaned_data.get("docker_image_name")
+        self.instance.docker_insecure_registry = self.cleaned_data.get("docker_insecure_registry")
         return super(VSGServiceForm, self).save(commit=commit)
 
     class Meta:
@@ -69,7 +75,7 @@ class VSGServiceAdmin(ReadOnlyAwareAdmin):
                                      'classes':['suit-tab suit-tab-general']}),
                  ("backend config", {'fields': [ "backend_network_label", "url_filter_kind", "bbs_api_hostname", "bbs_api_port", "bbs_server", "bbs_slice"],
                                      'classes':['suit-tab suit-tab-backend']}),
-                 ("vSG config", {'fields': ["dns_servers"],
+                 ("vSG config", {'fields': ["dns_servers", "docker_image_name", "docker_insecure_registry"],
                                      'classes':['suit-tab suit-tab-vsg']}) ]
     readonly_fields = ('backend_status_text', "service_specific_attribute")
     inlines = [SliceInline,ServiceAttrAsTabInline,ServicePrivilegeInline]
