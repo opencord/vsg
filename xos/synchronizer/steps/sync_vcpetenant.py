@@ -156,8 +156,17 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
                         if mac:
                             safe_macs.append(mac)
 
+
+        docker_opts = []
+        if vcpe_service.docker_insecure_registry:
+            reg_name = vcpe_service.docker_image_name.split("/",1)[0]
+            docker_opts.append("--insecure-registry " + reg_name)
+
         fields = {"s_tags": s_tags,
                 "c_tags": c_tags,
+                "docker_remote_image_name": vcpe_service.docker_image_name,
+                "docker_local_image_name": vcpe_service.docker_image_name, # vcpe_service.docker_image_name.split("/",1)[1].split(":",1)[0],
+                "docker_opts": " ".join(docker_opts),
                 "dnsdemux_ip": dnsdemux_ip,
                 "cdn_prefixes": cdn_prefixes,
                 "bbs_addrs": bbs_addrs,

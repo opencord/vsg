@@ -3,6 +3,7 @@ templates/vlan_sample.j2
 templates/before.rules.j2
 templates/start-vcpe.sh.j2
 templates/dnsmasq_safe_servers.j2
+templates/docker.j2
 templates/firewall_sample.j2
 templates/rc.local.j2
 templates/vcpe.conf.j2

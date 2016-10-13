@@ -10,6 +10,9 @@
       dnsdemux_ip: {{ dnsdemux_ip }}
       firewall_enable: {{ firewall_enable }}
       url_filter_enable: {{ url_filter_enable }}
+      docker_remote_image_name: {{ docker_remote_image_name }}
+      docker_local_image_name: {{ docker_local_image_name }}
+      docker_opts: {{ docker_opts }}
       c_tags:
         {% for c_tag in c_tags %}
         - {{ c_tag }}
@@ -143,6 +146,11 @@
 #    when: cron_job_pids_count.stdout == "0"
 {% endif %}
 
+  - name: Set docker options
+    template: src=/opt/xos/synchronizers/vsg/templates/docker.j2 dest=/etc/default/docker
+    notify:
+     - restart docker
+
   - name: vCPE upstart
     template: src=/opt/xos/synchronizers/vsg/templates/vcpe.conf.j2 dest=/etc/init/{{ container_name }}.conf
 
@@ -242,3 +250,6 @@
 
   - name: restart vcpe
     shell: service {{ container_name }} stop; sleep 1; service {{ container_name }} start
+
+  - name: restart docker
+    shell: service docker restart
