@@ -36,7 +36,9 @@ class VSGService(Service):
                           ("backend_network_label", "hpc_client"),
                           ("dns_servers", "8.8.8.8"),
                           ("url_filter_kind", None),
-                          ("node_label", None) )
+                          ("node_label", None),
+                          ("docker_image_name", "docker.io/xosproject/vsg"),
+                          ("docker_insecure_registry", False) )
 
     def __init__(self, *args, **kwargs):
         super(VSGService, self).__init__(*args, **kwargs)

@@ -6,5 +6,5 @@ class XOSVsgService(XOSService):
     xos_model = VSGService
     copyin_props = ["view_url", "icon_url", "enabled", "published", "public_key",
                     "private_key_fn", "versionNumber", "backend_network_label",
-                    "dns_servers", "node_label"]
+                    "dns_servers", "node_label", "docker_image_name", "docker_insecure_registry"]
 
