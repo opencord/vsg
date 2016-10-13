@@ -158,6 +158,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
 
         fields = {"s_tags": s_tags,
                 "c_tags": c_tags,
+                "docker_image_name": vcpe_service.docker_image_name,
                 "dnsdemux_ip": dnsdemux_ip,
                 "cdn_prefixes": cdn_prefixes,
                 "bbs_addrs": bbs_addrs,
