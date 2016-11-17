@@ -9,7 +9,7 @@ from xos.config import Config
 from synchronizers.base.syncstep import SyncStep
 from synchronizers.base.ansible import run_template_ssh
 from synchronizers.base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
-from core.models import Service, Slice, Tag
+from core.models import Service, Slice, Tag, ModelLink, CoarseTenant, Tenant
 from services.vsg.models import VSGService, VSGTenant
 from xos.logger import Logger, logging
 
@@ -37,6 +37,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
     observes=VSGTenant
     requested_interval=0
     template_name = "sync_vcpetenant.yaml"
+    watches = [ModelLink(CoarseTenant,via='coarsetenant')]
 
     def __init__(self, *args, **kwargs):
         super(SyncVSGTenant, self).__init__(*args, **kwargs)

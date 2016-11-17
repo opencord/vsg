@@ -36,6 +36,7 @@ save_ansible_output=True
 # set proxy_ssh to false on cloudlab
 proxy_ssh=False
 full_setup=True
+enable_watchers=True
 
 [feefie]
 client_id='vicci_dev_central'
