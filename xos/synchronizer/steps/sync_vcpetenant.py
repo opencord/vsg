@@ -37,6 +37,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
     observes=VSGTenant
     requested_interval=0
     template_name = "sync_vcpetenant.yaml"
+    handle_service_composition_watch_notification = True
 
     def __init__(self, *args, **kwargs):
         super(SyncVSGTenant, self).__init__(*args, **kwargs)
