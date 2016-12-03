@@ -19,6 +19,7 @@ steps/sync_vcpetenant.py
 steps/sync_vcpetenant_new.yaml
 steps/sync_vcpetenant_vtn.yaml
 steps/sync_vcpetenant.yaml
+steps/sync_monitoring_agent.yaml
 steps/test.yaml
 steps/ansible_test/README
 steps/ansible_test/test.yaml
