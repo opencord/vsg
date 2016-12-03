@@ -4,12 +4,13 @@ import socket
 import sys
 import base64
 import time
+from urlparse import urlparse
 from django.db.models import F, Q
 from xos.config import Config
 from synchronizers.base.syncstep import SyncStep
 from synchronizers.base.ansible import run_template_ssh
 from synchronizers.base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
-from core.models import Service, Slice, Tag, ModelLink, CoarseTenant, Tenant
+from core.models import Service, Slice, Tag, ModelLink, CoarseTenant, Tenant, ServiceMonitoringAgentInfo
 from services.vsg.models import VSGService, VSGTenant
 from xos.logger import Logger, logging
 
@@ -37,7 +38,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
     observes=VSGTenant
     requested_interval=0
     template_name = "sync_vcpetenant.yaml"
-    watches = [ModelLink(CoarseTenant,via='coarsetenant')]
+    watches = [ModelLink(CoarseTenant,via='coarsetenant'), ModelLink(ServiceMonitoringAgentInfo,via='monitoringagentinfo')]
 
     def __init__(self, *args, **kwargs):
         super(SyncVSGTenant, self).__init__(*args, **kwargs)
@@ -266,4 +267,42 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
         o.last_ansible_hash = ansible_hash
 
     def delete_record(self, m):
+        pass
+
+    def handle_service_monitoringagentinfo_watch_notification(self, monitoring_agent_info):
+        if not monitoring_agent_info.service:
+            logger.info("handle watch notifications for service monitoring agent info...ignoring because service attribute in monitoring agent info:%s is null" % (monitoring_agent_info))
+            return
+
+        if not monitoring_agent_info.target_uri:
+            logger.info("handle watch notifications for service monitoring agent info...ignoring because target_uri attribute in monitoring agent info:%s is null" % (monitoring_agent_info))
+            return
+
+        objs = VSGTenant.get_tenant_objects().all()
+        for obj in objs:
+            if obj.provider_service.id != monitoring_agent_info.service.id:
+                logger.info("handle watch notifications for service monitoring agent info...ignoring because service attribute in monitoring agent info:%s is not matching" % (monitoring_agent_info))
+                return
+
+            instance = self.get_instance(obj)
+            if not instance:
+               logger.warn("handle watch notifications for service monitoring agent info...: No valid instance found for object %s" % (str(obj)))
+               return
+
+            logger.info("handling watch notification for monitoring agent info:%s for VSGTenant object:%s" % (monitoring_agent_info, obj))
+
+            #Run ansible playbook to update the routing table entries in the instance
+            fields = self.get_ansible_fields(instance)
+            fields["ansible_tag"] =  obj.__class__.__name__ + "_" + str(obj.id) + "_service_monitoring"
+            
+            #Parse the monitoring agent target_uri
+            url = urlparse(monitoring_agent_info.target_uri)
+
+            #Assuming target_uri is rabbitmq URI
+            fields["rabbit_user"] = url.username
+            fields["rabbit_password"] = url.password
+            fields["rabbit_host"] = url.hostname
+
+            template_name = "sync_monitoring_agent.yaml"
+            super(SyncVSGTenant, self).run_playbook(obj, fields, template_name)
         pass
