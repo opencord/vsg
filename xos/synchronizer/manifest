@@ -13,7 +13,6 @@ templates/start-vcpe-vtn.sh.j2
 manifest
 broadbandshield.py
 observer_ansible_test.py
-vcpe_synchronizer_config
 start-bbs.sh
 steps/sync_vcpetenant.py
 steps/sync_vcpetenant_new.yaml
@@ -47,5 +46,4 @@ vcpe-synchronizer.py
 model-deps
 supervisor/vcpe-observer.conf
 run.sh
-vtn_vcpe_synchronizer_config
-vcpe_stats_notifier.py
+vsg_synchronizer_config
