@@ -7,7 +7,7 @@ deployment=VICCI
 name=xos
 user=postgres
 password=password
-host=localhost
+host=xos_db
 port=5432
 
 [api]
@@ -36,8 +36,9 @@ save_ansible_output=True
 # set proxy_ssh to false on cloudlab
 full_setup=True
 proxy_ssh=True
-proxy_ssh_key=/opt/xos/synchronizers/vsg/node_key
+proxy_ssh_key=/opt/cord_profile/node_key
 proxy_ssh_user=root
+enable_watchers=True
 
 [networking]
 use_vtn=True
