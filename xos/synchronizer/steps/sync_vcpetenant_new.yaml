@@ -2,8 +2,8 @@
 - hosts: {{ instance_name }}
   gather_facts: False
   connection: ssh
-  user: {{ username }}
-  sudo: yes
+  become_user: {{ username }}
+
   vars:
       container_name: {{ container_name }}
       cdn_enable: {{ cdn_enable }}
