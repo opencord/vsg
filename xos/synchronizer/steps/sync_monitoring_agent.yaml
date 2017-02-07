@@ -2,7 +2,7 @@
 - hosts: {{ instance_name }}
   gather_facts: False
   connection: ssh
-  user: ubuntu
+  become: ubuntu
   vars:
       keystone_tenant_id: {{ keystone_tenant_id }}
       keystone_user_id: {{ keystone_user_id }}
