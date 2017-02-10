@@ -2,79 +2,21 @@
 - hosts: {{ instance_name }}
   #gather_facts: False
   connection: ssh
-  user: ubuntu
-  sudo: yes
+  become_user: ubuntu
   vars:
-      container_name: {{ container_name }}
-      cdn_enable: {{ cdn_enable }}
-      dnsdemux_ip: {{ dnsdemux_ip }}
-      firewall_enable: {{ firewall_enable }}
-      url_filter_enable: {{ url_filter_enable }}
-      docker_remote_image_name: {{ docker_remote_image_name }}
-      docker_local_image_name: {{ docker_local_image_name }}
-      docker_opts: {{ docker_opts }}
-      c_tags:
-        {% for c_tag in c_tags %}
-        - {{ c_tag }}
-        {% endfor %}
-      s_tags:
-        {% for s_tag in s_tags %}
-        - {{ s_tag }}
-        {% endfor %}
-      firewall_rules:
-        {% for firewall_rule in firewall_rules.split("\n") %}
-        - {{ firewall_rule }}
-        {% endfor %}
-      cdn_prefixes:
-        {% for prefix in cdn_prefixes %}
-        - {{ prefix }}
-        {% endfor %}
-      bbs_addrs:
-        {% for bbs_addr in bbs_addrs %}
-        - {{ bbs_addr }}
-        {% endfor %}
-      dns_servers:
-        {% for dns_server in dns_servers %}
-        - {{ dns_server }}
-        {% endfor %}
-      nat_ip: {{ nat_ip }}
-      nat_mac: {{ nat_mac }}
-      lan_ip: {{ lan_ip }}
-      lan_mac: {{ lan_mac }}
-      wan_ip: {{ wan_ip }}
-      wan_mac: {{ wan_mac }}
-      wan_container_ip: {{ wan_container_ip }}
-      wan_container_netbits: {{ wan_container_netbits }}
-      wan_container_mac: {{ wan_container_mac }}
-      wan_container_gateway_ip: {{ wan_container_gateway_ip }}
-      wan_vm_ip: {{ wan_vm_ip }}
-      wan_vm_mac: {{ wan_vm_mac }}
+      #firewall_rules:
+      #  {% for firewall_rule in firewall_rules.split("\n") %}
+      #  - {{ firewall_rule }}
+      #  {% endfor %}
       wan_next_hop: 10.0.1.253   # FIX ME
-      private_ip: {{ private_ip }}
-      private_mac: {{ private_mac }}
-      hpc_client_ip: {{ hpc_client_ip }}
-      hpc_client_mac: {{ hpc_client_mac }}
-      keystone_tenant_id: {{ keystone_tenant_id }}
-      keystone_user_id: {{ keystone_user_id }}
-      rabbit_user: {{ rabbit_user }}
-      rabbit_password: {{ rabbit_password }}
-      rabbit_host: {{ rabbit_host }}
-      safe_browsing:
-        {% for mac in safe_browsing_macs %}
-        - {{ mac }}
-        {% endfor %}
-      uplink_speed: {{ uplink_speed }}
-      downlink_speed: {{ downlink_speed }}
-      status: {{ status }}
-      enable_uverse: {{ enable_uverse }}
-      url_filter_kind: {{ url_filter_kind }}
+      safe_browsing: {{ safe_browsing_macs }}
 
 
   tasks:
   - name: Add hostname to /etc/hosts
     lineinfile: dest=/etc/hosts
       regexp='^127\.0\.0\.1'
-      line="127.0.0.1 localhost {{ '{{' }} ansible_hostname {{ '}}' }}"
+      line="127.0.0.1 localhost {{ ansible_hostname }}"
       owner=root group=root mode=0644
 
   - name: Verify that bridge-utils is installed
@@ -88,7 +30,7 @@
     register: network_is_setup
 
   - name: set up the network
-    shell: "{{ '{{' }} item {{ '}}' }}"
+    shell: "{{ item }}"
     with_items:
        - ip link del link eth0 eth0.500 || true
        - ip link add link eth0 eth0.500 type vlan id 500
@@ -108,20 +50,22 @@
   - name: Remember that the network is setup, so we never do the above again
     shell: touch /root/network_is_setup
 
-{% if full_setup %}
   - name: Check to see if environment is setup
     stat: path=/root/environment_is_setup
     register: environment_is_setup
+    when: full_setup
 
 # Everything here is now baked into the vCPE image
 # Leave this spot in place for future temporary setup stuff
 
   - name: Remember that the environment is setup, so we never do the above again
     shell: touch /root/environment_is_setup
+    when: full_setup
 
   - name: Verify if vcpe_stats_notifier ([] is to avoid capturing the shell process) cron job is already running
     shell: pgrep -f [v]cpe_stats_notifier | wc -l
     register: cron_job_pids_count
+    when: full_setup
 
 #  - name: DEBUG
 #    debug: var=cron_job_pids_count.stdout
@@ -144,7 +88,6 @@
 #    async: 9999999999999999
 #    poll: 0
 #    when: cron_job_pids_count.stdout == "0"
-{% endif %}
 
   - name: Set docker options
     template: src=/opt/xos/synchronizers/vsg/templates/docker.j2 dest=/etc/default/docker

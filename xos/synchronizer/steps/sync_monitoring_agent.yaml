@@ -2,13 +2,7 @@
 - hosts: {{ instance_name }}
   gather_facts: False
   connection: ssh
-  user: ubuntu
-  vars:
-      keystone_tenant_id: {{ keystone_tenant_id }}
-      keystone_user_id: {{ keystone_user_id }}
-      rabbit_user: {{ rabbit_user }}
-      rabbit_password: {{ rabbit_password }}
-      rabbit_host: {{ rabbit_host }}
+  become_user: ubuntu
 
   tasks:
   - name: Verify if vcpe_stats_notifier ([] is to avoid capturing the shell process) cron job is already running
