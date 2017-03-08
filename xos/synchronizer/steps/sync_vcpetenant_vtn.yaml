@@ -29,10 +29,6 @@
         {% for prefix in cdn_prefixes %}
         - {{ prefix }}
         {% endfor %}
-      bbs_addrs:
-        {% for bbs_addr in bbs_addrs %}
-        - {{ bbs_addr }}
-        {% endfor %}
       dns_servers:
         {% for dns_server in dns_servers %}
         - {{ dns_server }}
