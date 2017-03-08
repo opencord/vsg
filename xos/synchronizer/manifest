@@ -47,3 +47,4 @@ model-deps
 supervisor/vcpe-observer.conf
 run.sh
 vsg_synchronizer_config
+vcpe_stats_notifier.py
