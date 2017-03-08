@@ -19,8 +19,6 @@ class ConfigurationError(Exception):
 VCPE_KIND = "vCPE"
 CORD_SUBSCRIBER_KIND = "CordSubscriberRoot"
 
-CORD_USE_VTN = getattr(Config(), "networking_use_vtn", False)
-
 # -------------------------------------------
 # VCPE
 # -------------------------------------------
@@ -30,85 +28,32 @@ class VSGService(Service):
 
     URL_FILTER_KIND_CHOICES = ( (None, "None"), ("safebrowsing", "Safe Browsing"), ("answerx", "AnswerX") )
 
-    simple_attributes = ( ("bbs_api_hostname", None),
-                          ("bbs_api_port", None),
-                          ("bbs_server", None),
-                          ("backend_network_label", "hpc_client"),
-                          ("dns_servers", "8.8.8.8"),
-                          ("url_filter_kind", None),
-                          ("node_label", None),
-                          ("docker_image_name", "docker.io/xosproject/vsg"),
-                          ("docker_insecure_registry", False) )
-
-    def __init__(self, *args, **kwargs):
-        super(VSGService, self).__init__(*args, **kwargs)
+    url_filter_kind = StrippedCharField(max_length=30, choices=URL_FILTER_KIND_CHOICES, null=True, blank=True)
+    dns_servers = StrippedCharField(max_length=255, default="8.8.8.8")
+    node_label = StrippedCharField(max_length=30, null=True, blank=True)
+    docker_image_name = StrippedCharField(max_length=255, default="docker.io/xosproject/vsg")
+    docker_insecure_registry = models.BooleanField(default=False)
 
     class Meta:
         app_label = "vsg"
         verbose_name = "vSG Service"
-        proxy = True
-
-    def allocate_bbs_account(self):
-        vcpes = VSGTenant.get_tenant_objects().all()
-        bbs_accounts = [vcpe.bbs_account for vcpe in vcpes]
-
-        # There's a bit of a race here; some other user could be trying to
-        # allocate a bbs_account at the same time we are.
-
-        for i in range(2,21):
-             account_name = "bbs%02d@onlab.us" % i
-             if (account_name not in bbs_accounts):
-                 return account_name
-
-        raise XOSConfigurationError("We've run out of available broadbandshield accounts. Delete some vcpe and try again.")
-
-    @property
-    def bbs_slice(self):
-        bbs_slice_id=self.get_attribute("bbs_slice_id")
-        if not bbs_slice_id:
-            return None
-        bbs_slices=Slice.objects.filter(id=bbs_slice_id)
-        if not bbs_slices:
-            return None
-        return bbs_slices[0]
-
-    @bbs_slice.setter
-    def bbs_slice(self, value):
-        if value:
-            value = value.id
-        self.set_attribute("bbs_slice_id", value)
-
-VSGService.setup_simple_attributes()
 
 class VSGTenant(TenantWithContainer):
-    class Meta:
-        proxy = True
-
     KIND = VCPE_KIND
+
+    # it's not clear we still need this field...
+    last_ansible_hash = StrippedCharField(max_length=128, null=True, blank=True)
+
+    class Meta:
+        app_label = "vsg"
 
     sync_attributes = ("wan_container_ip", "wan_container_mac", "wan_container_netbits",
                        "wan_container_gateway_ip", "wan_container_gateway_mac",
                        "wan_vm_ip", "wan_vm_mac")
 
-    default_attributes = {"instance_id": None,
-                          "container_id": None,
-                          "users": [],
-                          "bbs_account": None,
-                          "last_ansible_hash": None,
-                          "wan_container_ip": None}
-
     def __init__(self, *args, **kwargs):
         super(VSGTenant, self).__init__(*args, **kwargs)
         self.cached_vrouter=None
-
-    @property
-    def vbng(self):
-        # not supported
-        return None
-
-    @vbng.setter
-    def vbng(self, value):
-        raise XOSConfigurationError("vCPE.vBNG cannot be set this way -- create a new vBNG object and set it's subscriber_tenant instead")
 
     @property
     def vrouter(self):
@@ -126,7 +71,7 @@ class VSGTenant(TenantWithContainer):
 
     @vrouter.setter
     def vrouter(self, value):
-        raise XOSConfigurationError("vCPE.vRouter cannot be set this way -- create a new vRuter object and set its subscriber_tenant instead")
+        raise XOSConfigurationError("VSGTenant.vrouter setter is not implemented")
 
     @property
     def volt(self):
@@ -138,21 +83,9 @@ class VSGTenant(TenantWithContainer):
             return None
         return volts[0]
 
-    @property
-    def bbs_account(self):
-        return self.get_attribute("bbs_account", self.default_attributes["bbs_account"])
-
-    @bbs_account.setter
-    def bbs_account(self, value):
-        return self.set_attribute("bbs_account", value)
-
-    @property
-    def last_ansible_hash(self):
-        return self.get_attribute("last_ansible_hash", self.default_attributes["last_ansible_hash"])
-
-    @last_ansible_hash.setter
-    def last_ansible_hash(self, value):
-        return self.set_attribute("last_ansible_hash", value)
+    @volt.setter
+    def volt(self, value):
+        raise XOSConfigurationError("VSGTenant.volt setter is not implemented")
 
     @property
     def ssh_command(self):
@@ -160,10 +93,6 @@ class VSGTenant(TenantWithContainer):
             return self.instance.get_ssh_command()
         else:
             return "no-instance"
-
-    @ssh_command.setter
-    def ssh_command(self, value):
-        pass
 
     def get_vrouter_field(self, name, default=None):
         if self.vrouter:
@@ -334,21 +263,6 @@ class VSGTenant(TenantWithContainer):
         # To-do: cleanup unused instances
         pass
 
-    def manage_bbs_account(self):
-        if self.deleted:
-            return
-
-        if self.volt and self.volt.subscriber and self.volt.subscriber.url_filter_enable:
-            if not self.bbs_account:
-                # make sure we use the proxied VSGService object, not the generic Service object
-                vcpe_service = VSGService.objects.get(id=self.provider_service.id)
-                self.bbs_account = vcpe_service.allocate_bbs_account()
-                super(VSGTenant, self).save()
-        else:
-            if self.bbs_account:
-                self.bbs_account = None
-                super(VSGTenant, self).save()
-
     def find_or_make_port(self, instance, network, **kwargs):
         port = Port.objects.filter(instance=instance, network=network)
         if port:
@@ -360,13 +274,10 @@ class VSGTenant(TenantWithContainer):
 
     def get_lan_network(self, instance):
         slice = self.provider_service.slices.all()[0]
-        if CORD_USE_VTN:
-            # there should only be one network private network, and its template should not be the management template
-            lan_networks = [x for x in slice.networks.all() if x.template.visibility=="private" and (not "management" in x.template.name)]
-            if len(lan_networks)>1:
-                raise XOSProgrammingError("The vSG slice should only have one non-management private network")
-        else:
-            lan_networks = [x for x in slice.networks.all() if "lan" in x.name]
+        # there should only be one network private network, and its template should not be the management template
+        lan_networks = [x for x in slice.networks.all() if x.template.visibility=="private" and (not "management" in x.template.name)]
+        if len(lan_networks)>1:
+            raise XOSProgrammingError("The vSG slice should only have one non-management private network")
         if not lan_networks:
             raise XOSProgrammingError("No lan_network")
         return lan_networks[0]
@@ -409,14 +320,13 @@ class VSGTenant(TenantWithContainer):
 
             # VTN-CORD needs a WAN address for the VM, so that the VM can
             # be configured.
-            if CORD_USE_VTN:
-                tags = Tag.select_by_content_object(instance).filter(name="vm_vrouter_tenant")
-                if not tags:
-                    vrouter = self.get_vrouter_service().get_tenant(address_pool_name="addresses_vsg", subscriber_service = self.provider_service)
-                    vrouter.set_attribute("tenant_for_instance_id", instance.id)
-                    vrouter.save()
-                    tag = Tag(service=self.provider_service, content_object=instance, name="vm_vrouter_tenant", value="%d" % vrouter.id)
-                    tag.save()
+            tags = Tag.select_by_content_object(instance).filter(name="vm_vrouter_tenant")
+            if not tags:
+                vrouter = self.get_vrouter_service().get_tenant(address_pool_name="addresses_vsg", subscriber_service = self.provider_service)
+                vrouter.set_attribute("tenant_for_instance_id", instance.id)
+                vrouter.save()
+                tag = Tag(service=self.provider_service, content_object=instance, name="vm_vrouter_tenant", value="%d" % vrouter.id)
+                tag.save()
 
     def save(self, *args, **kwargs):
         if not self.creator:
@@ -444,7 +354,6 @@ def model_policy_vcpe(pk):
         vcpe = vcpe[0]
         vcpe.manage_container()
         vcpe.manage_vrouter()
-        vcpe.manage_bbs_account()
         vcpe.cleanup_orphans()
 
 
