@@ -5,21 +5,11 @@ import sys
 import base64
 import time
 from urlparse import urlparse
-from django.db.models import F, Q
 from xos.config import Config
-from synchronizers.base.syncstep import SyncStep
-from synchronizers.base.ansible_helper import run_template_ssh
-from synchronizers.base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
-from core.models import Service, Slice, Tag, ModelLink, CoarseTenant, Tenant, ServiceMonitoringAgentInfo
-from services.vsg.models import VSGService, VSGTenant
+from synchronizers.new_base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
+from synchronizers.new_base.modelaccessor import *
+from synchronizers.new_base.ansible_helper import run_template_ssh
 from xos.logger import Logger, logging
-
-# Deal with configurations where the hpc service is not onboarded
-try:
-    from services.hpc.models import HpcService, CDNPrefix
-    hpc_service_onboarded=True
-except:
-    hpc_service_onboarded=False
 
 # hpclibrary will be in steps/..
 parentdir = os.path.join(os.path.dirname(__file__),"..")
@@ -39,19 +29,11 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
     def __init__(self, *args, **kwargs):
         super(SyncVSGTenant, self).__init__(*args, **kwargs)
 
-    def fetch_pending(self, deleted):
-        if (not deleted):
-            objs = VSGTenant.get_tenant_objects().filter(Q(enacted__lt=F('updated')) | Q(enacted=None),Q(lazy_blocked=False))
-        else:
-            objs = VSGTenant.get_deleted_tenant_objects()
-
-        return objs
-
     def get_vcpe_service(self, o):
         if not o.provider_service:
             return None
 
-        vcpes = VSGService.get_service_objects().filter(id=o.provider_service.id)
+        vcpes = VSGService.objects.filter(id=o.provider_service.id)
         if not vcpes:
             return None
 
@@ -78,38 +60,6 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
             if len(lines)>=2:
                 dnsdemux_ip = lines[0].strip()
                 cdn_prefixes = [x.strip() for x in lines[1:] if x.strip()]
-        elif hpc_service_onboarded:
-            # automatic CDN configuiration
-            #    it learns everything from CDN objects in XOS
-            #    not tested on pod.
-            if vcpe_service.backend_network_label:
-                # Connect to dnsdemux using the network specified by
-                #     vcpe_service.backend_network_label
-                for service in HpcService.objects.all():
-                    for slice in service.slices.all():
-                        if "dnsdemux" in slice.name:
-                            for instance in slice.instances.all():
-                                for ns in instance.ports.all():
-                                    if ns.ip and ns.network.labels and (vcpe_service.backend_network_label in ns.network.labels):
-                                        dnsdemux_ip = ns.ip
-                if not dnsdemux_ip:
-                    logger.info("failed to find a dnsdemux on network %s" % vcpe_service.backend_network_label,extra=o.tologdict())
-            else:
-                # Connect to dnsdemux using the instance's public address
-                for service in HpcService.objects.all():
-                    for slice in service.slices.all():
-                        if "dnsdemux" in slice.name:
-                            for instance in slice.instances.all():
-                                if dnsdemux_ip=="none":
-                                    try:
-                                        dnsdemux_ip = socket.gethostbyname(instance.node.name)
-                                    except:
-                                        pass
-                if not dnsdemux_ip:
-                    logger.info("failed to find a dnsdemux with a public address",extra=o.tologdict())
-
-            for prefix in CDNPrefix.objects.all():
-                cdn_prefixes.append(prefix.prefix)
 
         dnsdemux_ip = dnsdemux_ip or "none"
 
@@ -134,7 +84,6 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
                         if mac:
                             safe_macs.append(mac)
 
-
         docker_opts = []
         if vcpe_service.docker_insecure_registry:
             reg_name = vcpe_service.docker_image_name.split("/",1)[0]
@@ -143,7 +92,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
         fields = {"s_tags": s_tags,
                 "c_tags": c_tags,
                 "docker_remote_image_name": vcpe_service.docker_image_name,
-                "docker_local_image_name": vcpe_service.docker_image_name, # vcpe_service.docker_image_name.split("/",1)[1].split(":",1)[0],
+                "docker_local_image_name": vcpe_service.docker_image_name,
                 "docker_opts": " ".join(docker_opts),
                 "dnsdemux_ip": dnsdemux_ip,
                 "cdn_prefixes": cdn_prefixes,
@@ -193,7 +142,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
             logger.info("handle watch notifications for service monitoring agent info...ignoring because target_uri attribute in monitoring agent info:%s is null" % (monitoring_agent_info))
             return
 
-        objs = VSGTenant.get_tenant_objects().all()
+        objs = VSGTenant.objects.all()
         for obj in objs:
             if obj.provider_service.id != monitoring_agent_info.service.id:
                 logger.info("handle watch notifications for service monitoring agent info...ignoring because service attribute in monitoring agent info:%s is not matching" % (monitoring_agent_info))
@@ -220,4 +169,4 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
 
             template_name = "sync_monitoring_agent.yaml"
             super(SyncVSGTenant, self).run_playbook(obj, fields, template_name)
-        pass
+
