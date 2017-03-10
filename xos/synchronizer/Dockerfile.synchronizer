@@ -1,0 +1,9 @@
+FROM xosproject/xos-synchronizer-base
+
+ADD . /opt/xos/synchronizers/vsg
+
+ENTRYPOINT []
+
+WORKDIR "/opt/xos/synchronizers/vsg"
+
+CMD bash -c "cd /opt/xos/synchronizers/vsg; ./run-from-api.sh"
