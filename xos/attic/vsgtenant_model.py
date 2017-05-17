@@ -144,13 +144,9 @@ def get_vsg_service(self):
     return VSGService.get_service_objects().get(id=self.provider_service.id)
 
 def find_instance_for_s_tag(self, s_tag):
-    #s_tags = STagBlock.objects.find(s_s_tag)
-    #if s_tags:
-    #    return s_tags[0].instance
-
     tags = Tag.objects.filter(name="s_tag", value=s_tag)
     if tags:
-        return tags[0].content_object
+        return Tag.get_content_object(tags[0].content_type, tags[0].object_id)
 
     return None
 
@@ -266,7 +262,7 @@ def save_instance(self, instance):
         if self.volt and self.volt.s_tag:
             tags = Tag.objects.filter(name="s_tag", value=self.volt.s_tag)
             if not tags:
-                tag = Tag(service=self.provider_service, content_object=instance, name="s_tag", value=self.volt.s_tag)
+                tag = Tag(service=self.provider_service, content_type=instance.get_content_type_key(), object_id=instance.id, name="s_tag", value=self.volt.s_tag)
                 tag.save()
 
         # VTN-CORD needs a WAN address for the VM, so that the VM can
@@ -276,7 +272,7 @@ def save_instance(self, instance):
             vrouter = self.get_vrouter_service().get_tenant(address_pool_name="addresses_vsg", subscriber_service = self.provider_service)
             vrouter.set_attribute("tenant_for_instance_id", instance.id)
             vrouter.save()
-            tag = Tag(service=self.provider_service, content_object=instance, name="vm_vrouter_tenant", value="%d" % vrouter.id)
+            tag = Tag(service=self.provider_service, content_type=instance.get_content_type_key(), object_id=instance.id, name="vm_vrouter_tenant", value="%d" % vrouter.id)
             tag.save()
 
 def save(self, *args, **kwargs):
