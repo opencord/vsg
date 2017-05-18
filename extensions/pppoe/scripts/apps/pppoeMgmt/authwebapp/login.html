@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <META HTTP-EQUIV="pragma" CONTENT="no-cache">
+        <META HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate">
+        <META HTTP-EQUIV="expires" CONTENT="0">
+        <title>PPPoE User Login</title>
+        <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+        <link rel="stylesheet" type="text/css" href="css/login.css"/>
+    </head>
+    <body>    
+        <div class="box">
+            <div class="login-box">
+                <div class="login-title text-center">
+                    <h1><small>PPPoE User Account</small></h1>
+                </div>
+                <div class="login-content ">
+                    <div class="form" method="POST">
+                        <div class="form-group">
+                            <div class="col-xs-12  ">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-user"></span></span>
+                                    <input type="text" id="username" name="username" class="form-control" placeholder="user name" maxlength='20'/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-xs-12  ">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></span>
+                                    <input type="password" id="password" name="password" class="form-control" placeholder="password" maxlength='20'/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-xs-4 col-xs-offset-4 ">
+                                <button type="submit" id="login" class="btn btn-sm" style="background-color: #87CEFA"><span class="glyphicon glyphicon-off"></span> Connect </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script>
+        $(document).ready(function () {
+               $("#login").on("click", function () {
+                var userName = $("#username").val();
+                var passWord = $("#password").val();
+                /*$.getJSON("localIp.json",function(data){
+                    deviceIp=data.ip;
+                });*/
+                var request = {"username": userName,"password":passWord};
+                console.log(request);
+                $.ajax({
+                    type: "post",
+                    //url: "https://"+deviceIp+":443",
+                    url: document.URL,
+                    data: request,
+                    //dataType: "html",
+                    //contentType: "application/json",
+                    dataType: "json",
+                    crossDomain: true,
+                    success: function (response)
+                    {
+                         console.log(response);
+                        if(response.result == "Auth successfully!!")
+                        {
+                              alert(response.result);
+                              window.location.href='https://www.google.com/';
+                              //window.location.href=document.URL;
+                        }                     
+                        else
+                        {
+                             alert("Connection failed.");
+                        }                
+                    },
+                    error: function (error) {
+                        console.log(error);
+                        alert("send error. " + userName);
+                    }
+                });
+            });
+        });
+    </script>
+</html>
