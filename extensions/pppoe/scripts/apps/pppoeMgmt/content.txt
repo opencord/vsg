@@ -1,0 +1,16 @@
+br-wan    Link encap:Ethernet  HWaddr 02:42:0a:a8:00:04
+          inet addr:192.168.1.123  Bcast:0.0.0.0  Mask:255.255.255.0
+          inet6 addr: fe80::42:aff:fea8:4/64 Scope:Link
+          UP BROADCAST RUNNING PROMISC MULTICAST  MTU:1500  Metric:1
+          RX packets:250340 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:198922 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:344920632 (344.9 MB)  TX bytes:30670958 (30.6 MB)
+
+dpbr0     Link encap:Ethernet  HWaddr fa:16:3e:72:1a:1b
+          inet6 addr: fe80::f816:3eff:fe72:1a1b/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:46 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:8 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:3100 (3.1 KB)  TX bytes:648 (648.0 B)
