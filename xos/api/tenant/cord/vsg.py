@@ -11,7 +11,7 @@ from xos.apibase import XOSListCreateAPIView, XOSRetrieveUpdateDestroyAPIView, X
 from api.xosapi_helpers import PlusModelSerializer, XOSViewSet, ReadOnlyField
 
 def get_default_vsg_service():
-    vsg_services = VSGService.get_service_objects().all()
+    vsg_services = VSGService.objects.all()
     if vsg_services:
         return vsg_services[0].id
     return None
@@ -46,7 +46,7 @@ class VSGTenantViewSet(XOSViewSet):
     base_name = "vsg"
     method_name = "vsg"
     method_kind = "viewset"
-    queryset = VSGTenantForAPI.get_tenant_objects().all()
+    queryset = VSGTenantForAPI.objects.all()
     serializer_class = VSGTenantSerializer
 
     @classmethod
