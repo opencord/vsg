@@ -73,7 +73,7 @@ def wan_container_gateway_mac(self):
 
 @property
 def wan_vm_ip(self):
-    tags = Tag.select_by_content_object(self.instance).filter(name="vm_vrouter_tenant")
+    tags = Tag.objects.filter(content_type=self.instance.get_content_type_key(), object_id=self.instance.id, name="vm_vrouter_tenant")
     if tags:
         tenant = VRouterTenant.objects.get(id=tags[0].value)
         return tenant.public_ip
@@ -82,7 +82,7 @@ def wan_vm_ip(self):
 
 @property
 def wan_vm_mac(self):
-    tags = Tag.select_by_content_object(self.instance).filter(name="vm_vrouter_tenant")
+    tags = Tag.objects.filter(content_type=self.instance.get_content_type_key(), object_id=self.instance.id, name="vm_vrouter_tenant")
     if tags:
         tenant = VRouterTenant.objects.get(id=tags[0].value)
         return tenant.public_mac
@@ -98,7 +98,7 @@ def is_synced(self, value):
     pass
 
 def get_vrouter_service(self):
-    vrouterServices = VRouterService.get_service_objects().all()
+    vrouterServices = VRouterService.objects.all()
     if not vrouterServices:
         raise XOSConfigurationError("No VROUTER Services available")
     return vrouterServices[0]
@@ -141,7 +141,7 @@ def get_slice(self):
     return slice
 
 def get_vsg_service(self):
-    return VSGService.get_service_objects().get(id=self.provider_service.id)
+    return VSGService.objects.get(id=self.provider_service.id)
 
 def find_instance_for_s_tag(self, s_tag):
     tags = Tag.objects.filter(name="s_tag", value=s_tag)
@@ -229,6 +229,18 @@ def get_lan_network(self, instance):
         raise XOSProgrammingError("No lan_network")
     return lan_networks[0]
 
+def port_set_parameter(self, port, name, value):
+    instance_type = port.get_content_type_key()
+    existing_params = NetworkParameter.objects.filter(parameter__name=name, content_type=instance_type, object_id=port.id)
+    if existing_params:
+        p=existing_params[0]
+        p.value = value
+        p.save()
+    else:
+        pt = NetworkParameterType.objects.get(name=name)
+        p = NetworkParameter(parameter=pt, content_type=instance_type, object_id=port.id, value=value)
+        p.save()
+
 def save_instance(self, instance):
     with transaction.atomic():
         instance.volumes = "/etc/dnsmasq.d,/etc/ufw"
@@ -237,24 +249,24 @@ def save_instance(self, instance):
         if instance.isolation in ["container", "container_vm"]:
             lan_network = self.get_lan_network(instance)
             port = self.find_or_make_port(instance, lan_network, ip="192.168.0.1", port_id="unmanaged")
-            port.set_parameter("c_tag", self.volt.c_tag)
-            port.set_parameter("s_tag", self.volt.s_tag)
-            port.set_parameter("device", "eth1")
-            port.set_parameter("bridge", "br-lan")
+            self.port_set_parameter(port, "c_tag", self.volt.c_tag)
+            self.port_set_parameter(port, "s_tag", self.volt.s_tag)
+            self.port_set_parameter(port, "device", "eth1")
+            self.port_set_parameter(port, "bridge", "br-lan")
 
             wan_networks = [x for x in instance.slice.networks.all() if "wan" in x.name]
             if not wan_networks:
                 raise XOSProgrammingError("No wan_network")
             port = self.find_or_make_port(instance, wan_networks[0])
-            port.set_parameter("next_hop", value="10.0.1.253")   # FIX ME
-            port.set_parameter("device", "eth0")
+            self.port_set_parameter(port, "next_hop", value="10.0.1.253")   # FIX ME
+            self.port_set_parameter(port, "device", "eth0")
 
         if instance.isolation in ["vm"]:
             lan_network = self.get_lan_network(instance)
             port = self.find_or_make_port(instance, lan_network)
-            port.set_parameter("c_tag", self.volt.c_tag)
-            port.set_parameter("s_tag", self.volt.s_tag)
-            port.set_parameter("neutron_port_name", "stag-%s" % self.volt.s_tag)
+            self.port_set_parameter(port, "c_tag", self.volt.c_tag)
+            self.port_set_parameter(port, "s_tag", self.volt.s_tag)
+            self.port_set_parameter(port, "neutron_port_name", "stag-%s" % self.volt.s_tag)
             port.save()
 
         # tag the instance with the s-tag, so we can easily find the
@@ -267,7 +279,7 @@ def save_instance(self, instance):
 
         # VTN-CORD needs a WAN address for the VM, so that the VM can
         # be configured.
-        tags = Tag.select_by_content_object(instance).filter(name="vm_vrouter_tenant")
+        tags = Tag.objects.filter(content_type=instance.get_content_type_key(), object_id=instance.id, name="vm_vrouter_tenant")
         if not tags:
             vrouter = self.get_vrouter_service().get_tenant(address_pool_name="addresses_vsg", subscriber_service = self.provider_service)
             vrouter.set_attribute("tenant_for_instance_id", instance.id)
