@@ -60,7 +60,7 @@ class VSGServiceViewSet(XOSViewSet):
     base_name = "vsgservice"
     method_name = None # use the api endpoint /api/service/vsg/
     method_kind = "viewset"
-    queryset = VSGService.get_service_objects().select_related().all()
+    queryset = VSGService.objects.select_related().all()
     serializer_class = VSGServiceSerializer
 
     @classmethod

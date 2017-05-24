@@ -98,7 +98,7 @@ def is_synced(self, value):
     pass
 
 def get_vrouter_service(self):
-    vrouterServices = VRouterService.get_service_objects().all()
+    vrouterServices = VRouterService.objects.all()
     if not vrouterServices:
         raise XOSConfigurationError("No VROUTER Services available")
     return vrouterServices[0]
@@ -141,7 +141,7 @@ def get_slice(self):
     return slice
 
 def get_vsg_service(self):
-    return VSGService.get_service_objects().get(id=self.provider_service.id)
+    return VSGService.objects.get(id=self.provider_service.id)
 
 def find_instance_for_s_tag(self, s_tag):
     tags = Tag.objects.filter(name="s_tag", value=s_tag)
