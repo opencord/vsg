@@ -51,7 +51,7 @@ class VSGServiceAdmin(ReadOnlyAwareAdmin):
                            ) #('hpctools.html', 'top', 'tools') )
 
     def get_queryset(self, request):
-        return VSGService.get_service_objects_by_user(request.user)
+        return VSGService.select_by_user(request.user)
 
 class VSGTenantForm(forms.ModelForm):
     last_ansible_hash = forms.CharField(required=False)
@@ -96,7 +96,7 @@ class VSGTenantAdmin(ReadOnlyAwareAdmin):
     suit_form_tabs = (('general','Details'),)
 
     def get_queryset(self, request):
-        return VSGTenant.get_tenant_objects_by_user(request.user)
+        return VSGTenant.select_by_user(request.user)
 
 
 admin.site.register(VSGService, VSGServiceAdmin)

@@ -12,6 +12,7 @@ from services.vrouter.models import VRouterService, VRouterTenant
 import traceback
 from xos.exceptions import *
 from xos.config import Config
+from django.contrib.contenttypes.models import ContentType
 
 class ConfigurationError(Exception):
     pass
