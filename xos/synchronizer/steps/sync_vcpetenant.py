@@ -5,7 +5,6 @@ import sys
 import base64
 import time
 from urlparse import urlparse
-from xos.config import Config
 from synchronizers.new_base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
 from synchronizers.new_base.modelaccessor import *
 from synchronizers.new_base.ansible_helper import run_template_ssh
@@ -69,10 +68,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
             s_tags.append(o.volt.s_tag)
             c_tags.append(o.volt.c_tag)
 
-        try:
-            full_setup = Config().observer_full_setup
-        except:
-            full_setup = True
+        full_setup = True
 
         safe_macs=[]
         if vcpe_service.url_filter_kind == "safebrowsing":

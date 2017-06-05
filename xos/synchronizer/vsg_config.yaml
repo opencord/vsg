@@ -1,0 +1,7 @@
+name: vsg-synchronizer
+accessor:
+  username: xosadmin@opencord.org
+  password: "@/opt/xos/services/vsg/credentials/xosadmin@opencord.org"
+dependency_graph: "/opt/xos/synchronizers/vsg/model-deps"
+steps_dir: "/opt/xos/synchronizers/vsg/steps"
+sys_dir: "/opt/xos/synchronizers/vsg/sys"

@@ -11,7 +11,6 @@ from core.models.service import LeastLoadedNodeScheduler
 from services.vrouter.models import VRouterService, VRouterTenant
 import traceback
 from xos.exceptions import *
-from xos.config import Config
 
 class ConfigurationError(Exception):
     pass
