@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a0e1d27_51ca54a2",
+        "filename": "extensions/pppoe/scripts/apps/ipv6Apps/tayga",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2017-06-06T16:00:24Z",
+      "side": 1,
+      "message": "What are these binary files, and do we have permission to redistribute them?",
+      "revId": "ffa449b8b5b5f94e5cdfefc2405e1f808df216c5",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
