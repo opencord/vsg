@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "9a0e1d27_f1c60849",
+        "filename": "extensions/pppoe/scripts/admin-openrc.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000005
+      },
+      "writtenOn": "2017-06-06T21:32:50Z",
+      "side": 1,
+      "message": "I don\u0027t think these credentials should be hardcoded",
+      "revId": "ffa449b8b5b5f94e5cdfefc2405e1f808df216c5",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a0e1d27_51ca54a2",
         "filename": "extensions/pppoe/scripts/apps/ipv6Apps/tayga",
         "patchSetId": 1
@@ -13,6 +30,57 @@
       "writtenOn": "2017-06-06T16:00:24Z",
       "side": 1,
       "message": "What are these binary files, and do we have permission to redistribute them?",
+      "revId": "ffa449b8b5b5f94e5cdfefc2405e1f808df216c5",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a0e1d27_b1a9b07d",
+        "filename": "extensions/pppoe/scripts/apps/pppoeMgmt/authwebapp/js/jquery.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000005
+      },
+      "writtenOn": "2017-06-06T21:32:50Z",
+      "side": 1,
+      "message": "Can we pull this in from an external server or pull it during the build rather than checking in the source? \nThere might be licensing issues from doing this.",
+      "revId": "ffa449b8b5b5f94e5cdfefc2405e1f808df216c5",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a0e1d27_91b6acdb",
+        "filename": "extensions/pppoe/scripts/apps/pppoeMgmt/content.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000005
+      },
+      "writtenOn": "2017-06-06T21:32:50Z",
+      "side": 1,
+      "message": "Is this needed?",
+      "revId": "ffa449b8b5b5f94e5cdfefc2405e1f808df216c5",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a0e1d27_71bb18c5",
+        "filename": "extensions/pppoe/scripts/apps/pppoeMgmt/dnsmasq.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000005
+      },
+      "writtenOn": "2017-06-06T21:32:50Z",
+      "side": 1,
+      "message": "Is this needed?",
       "revId": "ffa449b8b5b5f94e5cdfefc2405e1f808df216c5",
       "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
       "unresolved": false
