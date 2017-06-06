@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a0e1d27_11ddfc70",
+        "filename": "xos/header.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2017-06-06T15:48:33Z",
+      "side": 0,
+      "message": "Should be symlink instead of file? Clarify with Sapan.",
+      "revId": "46df4fa1d3518d32b3d865a2ba8f0f60ac59c337",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
