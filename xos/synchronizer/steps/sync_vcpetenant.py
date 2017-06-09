@@ -126,8 +126,15 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
 
         o.last_ansible_hash = ansible_hash
 
-    def delete_record(self, m):
-        pass
+    def sync_record(self, o):
+        if (not o.policed) or (o.policed<o.updated):
+            defer_sync("waiting on model policy")
+        super(SyncVSGTenant, self).sync_record(o)
+
+    def delete_record(self, o):
+        if (not o.policed) or (o.policed<o.updated):
+            defer_sync("waiting on model policy")
+        # do not call super, as we don't want to re-run the playbook
 
     def handle_service_monitoringagentinfo_watch_notification(self, monitoring_agent_info):
         if not monitoring_agent_info.service:
