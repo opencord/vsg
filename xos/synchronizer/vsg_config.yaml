@@ -5,3 +5,4 @@ accessor:
 dependency_graph: "/opt/xos/synchronizers/vsg/model-deps"
 steps_dir: "/opt/xos/synchronizers/vsg/steps"
 sys_dir: "/opt/xos/synchronizers/vsg/sys"
+model_policies_dir: "/opt/xos/synchronizers/vsg/model_policies"
