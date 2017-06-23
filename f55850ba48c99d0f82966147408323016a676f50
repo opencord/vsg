@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "9a0e1d27_09902b94",
+        "filename": "xos/synchronizer/model_policies/test_model_policy_vsgtenant.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2017-06-23T21:59:27Z",
+      "side": 1,
+      "message": "I think this lines have no effect to extend the path (they will extend it with a non existing folder)",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 48
+      },
+      "revId": "f55850ba48c99d0f82966147408323016a676f50",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a0e1d27_897c3b74",
         "filename": "xos/synchronizer/model_policies/test_model_policy_vsgtenant.py",
         "patchSetId": 9
