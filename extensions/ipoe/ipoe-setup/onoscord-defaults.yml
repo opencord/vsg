@@ -1,0 +1,43 @@
+
+# Copyright 2017-present Open Networking Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+---
+# onos-cord-install/defaults/main.yml
+
+# paths
+pki_dir: "{{ playbook_dir }}/pki"
+ssh_pki_dir: "{{ playbook_dir }}/ssh_pki"
+head_onos_cord_dir: "/opt/onos_cord"
+
+# ONOS docker image to use
+pull_docker_registry: ""
+pull_docker_tag: "candidate"
+#onos_docker_image: "{{ pull_docker_registry }}onosproject/onos:{{ pull_docker_tag }}"
+onos_docker_image: "opencord/voltha-onos:latest"
+
+# log level for ONOS
+onos_log_level: "INFO"
+
+# name of master ssh key for this pod
+pod_sshkey_name: "headnode"
+
+# used for Java KeyStore within ONOS image
+trust_store_pw: "changeit"
+
+# logging_host should be set to DNS or IP addr of logstash host
+logging_host: "cordloghost"
+log4j_port: 4560
+

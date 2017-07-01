@@ -1,0 +1,8 @@
+<network ipv6='yes'>
+  <name>nni-network</name>
+  <uuid>c655b384-4c31-4a70-9c87-6c83674dfb16</uuid>
+  <bridge name='nni-uplinkbr' stp='on' delay='0'/>
+  <mac address='52:54:09:ED:88:38'/>
+  <ip address='0.13.0.1' netmask='255.255.255.0'>
+  </ip>
+</network>
