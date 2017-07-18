@@ -28,13 +28,17 @@ class VSGTenantPolicy(TenantWithContainerPolicy):
     def cleanup_orphans(self, tenant):
         # ensure vSG only has one vRouter
         cur_vrouter = tenant.vrouter
-        for vrouter in list(VRouterTenant.objects.filter(subscriber_tenant_id=tenant.id)):  # TODO: Hardcoded dependency
-            if (not cur_vrouter) or (vrouter.id != cur_vrouter.id):
-                # print "XXX clean up orphaned vrouter", vrouter
-                vrouter.delete()
+        for link in tenant.subscribed_links.all():
+            # TODO: hardcoded dependency
+            # cast from ServiceInstance to VRouterTenant
+            vrouters = VRouterTenant.objects.filter(id = link.provider_service_instance.id)
+            for vrouter in vrouters:
+                if (not cur_vrouter) or (vrouter.id != cur_vrouter.id):
+                    # print "XXX clean up orphaned vrouter", vrouter
+                    vrouter.delete()
 
     def get_vsg_service(self, tenant):
-        return VSGService.objects.get(id=tenant.provider_service.id)
+        return VSGService.objects.get(id=tenant.owner.id)
 
     def find_instance_for_s_tag(self, s_tag):
         tags = Tag.objects.filter(name="s_tag", value=s_tag)
@@ -57,7 +61,7 @@ class VSGTenantPolicy(TenantWithContainerPolicy):
         if not flavors:
             raise SynchronizerConfigurationError("No m1.small flavor")
 
-        slice = tenant.provider_service.slices.first()
+        slice = tenant.owner.slices.first()
 
         (node, parent) = LeastLoadedNodeScheduler(slice, label=self.get_vsg_service(tenant).node_label).pick()
 
@@ -107,7 +111,7 @@ class VSGTenantPolicy(TenantWithContainerPolicy):
         return port
 
     def get_lan_network(self, tenant, instance):
-        slice = tenant.provider_service.slices.all()[0]
+        slice = tenant.owner.slices.all()[0]
         # there should only be one network private network, and its template should not be the management template
         lan_networks = [x for x in slice.networks.all() if
                         x.template.visibility == "private" and (not "management" in x.template.name)]
@@ -150,7 +154,7 @@ class VSGTenantPolicy(TenantWithContainerPolicy):
             if tenant.volt and tenant.volt.s_tag:
                 tags = Tag.objects.filter(name="s_tag", value=tenant.volt.s_tag)
                 if not tags:
-                    tag = Tag(service=tenant.provider_service, content_type=instance.self_content_type_id, object_id=instance.id, name="s_tag", value=str(tenant.volt.s_tag))
+                    tag = Tag(service=tenant.owner, content_type=instance.self_content_type_id, object_id=instance.id, name="s_tag", value=str(tenant.volt.s_tag))
                     tag.save()
 
             # VTN-CORD needs a WAN address for the VM, so that the VM can
@@ -158,11 +162,11 @@ class VSGTenantPolicy(TenantWithContainerPolicy):
             tags = Tag.objects.filter(content_type=instance.self_content_type_id, object_id=instance.id, name="vm_vrouter_tenant")
             if not tags:
                 vrouter = self.allocate_public_service_instance(address_pool_name="addresses_vsg",
-                                                                subscriber_service=tenant.provider_service)
+                                                                subscriber_service=tenant.owner)
                 vrouter.set_attribute("tenant_for_instance_id", instance.id)
                 vrouter.save()
                 # TODO: potential partial failure
-                tag = Tag(service=tenant.provider_service, content_type=instance.self_content_type_id, object_id=instance.id, name="vm_vrouter_tenant", value="%d" % vrouter.id)
+                tag = Tag(service=tenant.owner, content_type=instance.self_content_type_id, object_id=instance.id, name="vm_vrouter_tenant", value="%d" % vrouter.id)
                 tag.save()
 
             instance.no_sync = False   # allow the synchronizer to run now
