@@ -60,8 +60,7 @@ class VSGTenantForm(forms.ModelForm):
 
     def __init__(self,*args,**kwargs):
         super (VSGTenantForm,self ).__init__(*args,**kwargs)
-        self.fields['kind'].widget.attrs['readonly'] = True
-        self.fields['provider_service'].queryset = VSGService.objects.all()
+        self.fields['owner'].queryset = VSGService.objects.all()
         if self.instance:
             # fields for the attributes
             self.fields['last_ansible_hash'].initial = self.instance.last_ansible_hash
@@ -69,10 +68,9 @@ class VSGTenantForm(forms.ModelForm):
             self.fields['wan_container_mac'].initial = self.instance.wan_container_mac
         if (not self.instance) or (not self.instance.pk):
             # default fields for an 'add' form
-            self.fields['kind'].initial = VCPE_KIND
             self.fields['creator'].initial = get_request().user
             if VSGService.objects.exists():
-               self.fields["provider_service"].initial = VSGService.objects.all()[0]
+               self.fields["owner"].initial = VSGService.objects.all()[0]
 
     def save(self, commit=True):
         self.instance.creator = self.cleaned_data.get("creator")
@@ -87,7 +85,7 @@ class VSGTenantForm(forms.ModelForm):
 class VSGTenantAdmin(ReadOnlyAwareAdmin):
     list_display = ('backend_status_icon', 'id', 'subscriber_tenant' )
     list_display_links = ('backend_status_icon', 'id')
-    fieldsets = [ (None, {'fields': ['backend_status_text', 'kind', 'provider_service', 'subscriber_tenant', 'service_specific_id',
+    fieldsets = [ (None, {'fields': ['backend_status_text', 'owner', 'subscriber_tenant', 'service_specific_id',
                                      'wan_container_ip', 'wan_container_mac', 'creator', 'instance', 'last_ansible_hash'],
                           'classes':['suit-tab suit-tab-general']})]
     readonly_fields = ('backend_status_text', 'service_specific_attribute', 'wan_container_ip', 'wan_container_mac')
