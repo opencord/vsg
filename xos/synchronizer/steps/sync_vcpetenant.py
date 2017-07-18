@@ -29,10 +29,10 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
         super(SyncVSGTenant, self).__init__(*args, **kwargs)
 
     def get_vcpe_service(self, o):
-        if not o.provider_service:
+        if not o.owner:
             return None
 
-        vcpes = VSGService.objects.filter(id=o.provider_service.id)
+        vcpes = VSGService.objects.filter(id=o.owner.id)
         if not vcpes:
             return None
 
@@ -147,7 +147,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
 
         objs = VSGTenant.objects.all()
         for obj in objs:
-            if obj.provider_service.id != monitoring_agent_info.service.id:
+            if obj.owner.id != monitoring_agent_info.service.id:
                 logger.info("handle watch notifications for service monitoring agent info...ignoring because service attribute in monitoring agent info:%s is not matching" % (monitoring_agent_info))
                 return
 

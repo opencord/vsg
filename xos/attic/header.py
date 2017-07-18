@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import Service, XOSBase, Slice, Instance, Tenant, TenantWithContainer, Node, Image, User, Flavor, NetworkParameter, NetworkParameterType, Port, AddressPool, User
+from core.models import Service, XOSBase, Slice, Instance, TenantWithContainer, Node, Image, User, Flavor, NetworkParameter, NetworkParameterType, Port, AddressPool, User
 from core.models.xosbase import StrippedCharField
 import os
 from django.db import models, transaction

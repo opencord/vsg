@@ -10,7 +10,7 @@ from django.contrib.auth.signals import user_logged_in
 from django.utils import timezone
 from django.contrib.contenttypes import generic
 from suit.widgets import LinkedSelect
-from core.admin import ServiceAppAdmin,SliceInline,ServiceAttrAsTabInline, ReadOnlyAwareAdmin, XOSTabularInline, ServicePrivilegeInline, TenantRootTenantInline, TenantRootPrivilegeInline
+from core.admin import ServiceAppAdmin,SliceInline,ServiceAttrAsTabInline, ReadOnlyAwareAdmin, XOSTabularInline, ServicePrivilegeInline, SubscriberLinkInline, ProviderLinkInline, ProviderDependencyInline,SubscriberDependencyInline
 from core.middleware import get_request
 
 from functools import update_wrapper
@@ -31,7 +31,7 @@ class VSGServiceAdmin(ReadOnlyAwareAdmin):
                  ("vSG config", {'fields': ["dns_servers", "docker_image_name", "docker_insecure_registry"],
                                      'classes':['suit-tab suit-tab-vsg']}) ]
     readonly_fields = ('backend_status_text', "service_specific_attribute")
-    inlines = [SliceInline,ServiceAttrAsTabInline,ServicePrivilegeInline]
+    inlines = [SliceInline,ServiceAttrAsTabInline,ServicePrivilegeInline, ProviderDependencyInline,SubscriberDependencyInline]
 
     extracontext_registered_admins = True
 
@@ -44,6 +44,7 @@ class VSGServiceAdmin(ReadOnlyAwareAdmin):
         #('tools', 'Tools'),
         ('slices','Slices'),
         ('serviceattrs','Additional Attributes'),
+        ('servicetenants', 'Dependencies'),
         ('serviceprivileges','Privileges') ,
     )
 
@@ -60,8 +61,7 @@ class VSGTenantForm(forms.ModelForm):
 
     def __init__(self,*args,**kwargs):
         super (VSGTenantForm,self ).__init__(*args,**kwargs)
-        self.fields['kind'].widget.attrs['readonly'] = True
-        self.fields['provider_service'].queryset = VSGService.objects.all()
+        self.fields['owner'].queryset = VSGService.objects.all()
         if self.instance:
             # fields for the attributes
             self.fields['last_ansible_hash'].initial = self.instance.last_ansible_hash
@@ -69,10 +69,9 @@ class VSGTenantForm(forms.ModelForm):
             self.fields['wan_container_mac'].initial = self.instance.wan_container_mac
         if (not self.instance) or (not self.instance.pk):
             # default fields for an 'add' form
-            self.fields['kind'].initial = VCPE_KIND
             self.fields['creator'].initial = get_request().user
             if VSGService.objects.exists():
-               self.fields["provider_service"].initial = VSGService.objects.all()[0]
+               self.fields["owner"].initial = VSGService.objects.all()[0]
 
     def save(self, commit=True):
         self.instance.creator = self.cleaned_data.get("creator")
@@ -85,15 +84,17 @@ class VSGTenantForm(forms.ModelForm):
         fields = '__all__'
 
 class VSGTenantAdmin(ReadOnlyAwareAdmin):
-    list_display = ('backend_status_icon', 'id', 'subscriber_tenant' )
+    list_display = ('backend_status_icon', 'id', )
     list_display_links = ('backend_status_icon', 'id')
-    fieldsets = [ (None, {'fields': ['backend_status_text', 'kind', 'provider_service', 'subscriber_tenant', 'service_specific_id',
+    fieldsets = [ (None, {'fields': ['backend_status_text', 'owner', 'service_specific_id',
                                      'wan_container_ip', 'wan_container_mac', 'creator', 'instance', 'last_ansible_hash'],
                           'classes':['suit-tab suit-tab-general']})]
     readonly_fields = ('backend_status_text', 'service_specific_attribute', 'wan_container_ip', 'wan_container_mac')
+    inlines = (ProviderLinkInline, SubscriberLinkInline)
     form = VSGTenantForm
 
-    suit_form_tabs = (('general','Details'),)
+    suit_form_tabs = (('general','Details'),
+                      ('servicelinks','Links'),)
 
     def get_queryset(self, request):
         return VSGTenant.select_by_user(request.user)
