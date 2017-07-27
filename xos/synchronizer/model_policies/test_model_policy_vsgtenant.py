@@ -187,7 +187,7 @@ class MockVSGService(MockObject):
 class MockVSGTenantObjects(MockObjectStore): pass
 class MockVSGTenant(MockObject):
     objects = get_MockObjectStore("VSGTenant")
-    provider_service = None
+    owner = None
     deleted = False
     instance = None
     creator = None
@@ -349,7 +349,7 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
     def test_get_lan_network_noexist(self, vsgservice_objects):
         vsgservice=MockVSGService(name="myvsgservice", id=1, slices=MockObjectList(initial=[self.slice]))
         vsgservice_objects.return_value = [vsgservice]
-        self.tenant.provider_service = vsgservice
+        self.tenant.owner = vsgservice
         self.slice.networks = MockObjectList()
         with self.assertRaises(Exception) as e:
             self.policy.get_lan_network(self.tenant, None)
@@ -359,7 +359,7 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
     def test_get_lan_network(self, vsgservice_objects):
         vsgservice=MockVSGService(name="myvsgservice", id=1, slices=MockObjectList(initial=[self.slice]))
         vsgservice_objects.return_value = [vsgservice]
-        self.tenant.provider_service = vsgservice
+        self.tenant.owner = vsgservice
         self.slice.networks = MockObjectList([self.priv_network])
         lan_network = self.policy.get_lan_network(self.tenant, None)
         self.assertEqual(lan_network, self.priv_network)
@@ -369,7 +369,7 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         some_other_network = MockNetwork(name="mysite_test1_private", template=self.priv_template)
         vsgservice=MockVSGService(name="myvsgservice", id=1, slices=MockObjectList(initial=[self.slice]))
         vsgservice_objects.return_value = [vsgservice]
-        self.tenant.provider_service = vsgservice
+        self.tenant.owner = vsgservice
         self.slice.networks = MockObjectList([self.priv_network, some_other_network])
         with self.assertRaises(Exception) as e:
             lan_network = self.policy.get_lan_network(self.tenant, None)
@@ -417,7 +417,7 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         vrtenant = MockVRouterTenant(public_ip="1.2.3.4", public_mac="01:02:03:04:05:06")
         vsgservice=MockVSGService(name="myvsgservice", id=1, slices=MockObjectList(initial=[self.slice]))
         vsgservice_objects.return_value = [vsgservice]
-        self.tenant.provider_service = vsgservice
+        self.tenant.owner = vsgservice
         volt.s_tag=222
         volt.c_tag=111
         get_image.return_value = self.image
