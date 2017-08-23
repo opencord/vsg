@@ -24,7 +24,7 @@ from django.db.models import *
 from operator import itemgetter, attrgetter, methodcaller
 from core.models import Tag
 from core.models.service import LeastLoadedNodeScheduler
-from services.vrouter.models import VRouterService, VRouterTenant
+from services.addressmanager.models import AddressManagerService, AddressManagerServiceInstance
 import traceback
 from xos.exceptions import *
 from django.contrib.contenttypes.models import ContentType

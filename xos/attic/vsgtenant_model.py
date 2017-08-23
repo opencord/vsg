@@ -20,25 +20,25 @@ sync_attributes = ("wan_container_ip", "wan_container_mac", "wan_container_netbi
 
 def __init__(self, *args, **kwargs):
     super(VSGTenant, self).__init__(*args, **kwargs)
-    self.cached_vrouter=None
+    self.cached_address_service_instance=None
 
 @property
-def vrouter(self):
-    vrouter = self.get_newest_subscribed_tenant(VRouterTenant)
-    if not vrouter:
+def address_service_instance(self):
+    address_service_instance = self.get_newest_subscribed_tenant(AddressManagerServiceInstance)
+    if not address_service_instance:
         return None
 
     # always return the same object when possible
-    if (self.cached_vrouter) and (self.cached_vrouter.id == vrouter.id):
-        return self.cached_vrouter
+    if (self.cached_address_service_instance) and (self.cached_address_service_instance.id == address_service_instance.id):
+        return self.cached_address_service_instance
 
-    vrouter.caller = self.creator
-    self.cached_vrouter = vrouter
-    return vrouter
+    address_service_instance.caller = self.creator
+    self.cached_address_service_instance = address_service_instance
+    return address_service_instance
 
-@vrouter.setter
-def vrouter(self, value):
-    raise XOSConfigurationError("VSGTenant.vrouter setter is not implemented")
+@address_service_instance.setter
+def address_service_instance(self, value):
+    raise XOSConfigurationError("VSGTenant.address_service_instance setter is not implemented")
 
 @property
 def volt(self):
@@ -61,37 +61,37 @@ def ssh_command(self):
     else:
         return "no-instance"
 
-def get_vrouter_field(self, name, default=None):
-    if self.vrouter:
-        return getattr(self.vrouter, name, default)
+def get_address_service_instance_field(self, name, default=None):
+    if self.address_service_instance:
+        return getattr(self.address_service_instance, name, default)
     else:
         return default
 
 @property
 def wan_container_ip(self):
-    return self.get_vrouter_field("public_ip", None)
+    return self.get_address_service_instance_field("public_ip", None)
 
 @property
 def wan_container_mac(self):
-    return self.get_vrouter_field("public_mac", None)
+    return self.get_address_service_instance_field("public_mac", None)
 
 @property
 def wan_container_netbits(self):
-    return self.get_vrouter_field("netbits", None)
+    return self.get_address_service_instance_field("netbits", None)
 
 @property
 def wan_container_gateway_ip(self):
-    return self.get_vrouter_field("gateway_ip", None)
+    return self.get_address_service_instance_field("gateway_ip", None)
 
 @property
 def wan_container_gateway_mac(self):
-    return self.get_vrouter_field("gateway_mac", None)
+    return self.get_address_service_instance_field("gateway_mac", None)
 
 @property
 def wan_vm_ip(self):
     tags = Tag.objects.filter(content_type=self.instance.get_content_type_key(), object_id=self.instance.id, name="vm_vrouter_tenant")
     if tags:
-        tenant = VRouterTenant.objects.get(id=tags[0].value)
+        tenant = AddressManagerServiceInstance.objects.get(id=tags[0].value)
         return tenant.public_ip
     else:
         raise Exception("no vm_vrouter_tenant tag for instance %s" % o.instance)
@@ -100,7 +100,7 @@ def wan_vm_ip(self):
 def wan_vm_mac(self):
     tags = Tag.objects.filter(content_type=self.instance.get_content_type_key(), object_id=self.instance.id, name="vm_vrouter_tenant")
     if tags:
-        tenant = VRouterTenant.objects.get(id=tags[0].value)
+        tenant = AddressManagerServiceInstance.objects.get(id=tags[0].value)
         return tenant.public_mac
     else:
         raise Exception("no vm_vrouter_tenant tag for instance %s" % o.instance)

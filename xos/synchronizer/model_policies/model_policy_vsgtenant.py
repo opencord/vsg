@@ -26,32 +26,31 @@ class VSGTenantPolicy(TenantWithContainerPolicy):
 
     def handle_update(self, tenant):
         self.manage_container(tenant)
-        self.manage_vrouter(tenant)
+        self.manage_address_service_instance(tenant)
         self.cleanup_orphans(tenant)
 
     def handle_delete(self, tenant):
-        if tenant.vrouter:
-            tenant.vrouter.delete()
+        if tenant.address_service_instance:
+            tenant.address_service_instance.delete()
 
-    def manage_vrouter(self, tenant):
+    def manage_address_service_instance(self, tenant):
         if tenant.deleted:
             return
 
-        if tenant.vrouter is None:
-            vrouter = self.allocate_public_service_instance(address_pool_name="addresses_vsg", subscriber_tenant=tenant)
-            vrouter.save()
+        if tenant.address_service_instance is None:
+            address_service_instance = self.allocate_public_service_instance(address_pool_name="addresses_vsg", subscriber_tenant=tenant)
+            address_service_instance.save()
 
     def cleanup_orphans(self, tenant):
-        # ensure vSG only has one vRouter
-        cur_vrouter = tenant.vrouter
+        # ensure vSG only has one AddressManagerServiceInstance
+        cur_asi = tenant.address_service_instance
         for link in tenant.subscribed_links.all():
             # TODO: hardcoded dependency
-            # cast from ServiceInstance to VRouterTenant
-            vrouters = VRouterTenant.objects.filter(id = link.provider_service_instance.id)
-            for vrouter in vrouters:
-                if (not cur_vrouter) or (vrouter.id != cur_vrouter.id):
-                    # print "XXX clean up orphaned vrouter", vrouter
-                    vrouter.delete()
+            # cast from ServiceInstance to AddressManagerServiceInstance
+            asis = AddressManagerServiceInstance.objects.filter(id = link.provider_service_instance.id)
+            for asi in asis:
+                if (not cur_asi) or (asi.id != cur_asi.id):
+                    asi.delete()
 
     def get_vsg_service(self, tenant):
         return VSGService.objects.get(id=tenant.owner.id)
@@ -177,12 +176,12 @@ class VSGTenantPolicy(TenantWithContainerPolicy):
             # be configured.
             tags = Tag.objects.filter(content_type=instance.self_content_type_id, object_id=instance.id, name="vm_vrouter_tenant")
             if not tags:
-                vrouter = self.allocate_public_service_instance(address_pool_name="addresses_vsg",
-                                                                subscriber_service=tenant.owner)
-                vrouter.set_attribute("tenant_for_instance_id", instance.id)
-                vrouter.save()
+                address_service_instance = self.allocate_public_service_instance(address_pool_name="addresses_vsg",
+                                                                                 subscriber_service=tenant.owner)
+                address_service_instance.set_attribute("tenant_for_instance_id", instance.id)
+                address_service_instance.save()
                 # TODO: potential partial failure
-                tag = Tag(service=tenant.owner, content_type=instance.self_content_type_id, object_id=instance.id, name="vm_vrouter_tenant", value="%d" % vrouter.id)
+                tag = Tag(service=tenant.owner, content_type=instance.self_content_type_id, object_id=instance.id, name="vm_vrouter_tenant", value="%d" % address_service_instance.id)
                 tag.save()
 
             instance.no_sync = False   # allow the synchronizer to run now

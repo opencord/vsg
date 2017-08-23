@@ -176,9 +176,9 @@ class MockPort(MockObject):
     def set_parameter(self, name, value):
         pass
 
-class MockVRouterTenantObjects(MockObjectStore): pass
-class MockVRouterTenant(MockObject):
-    objects = get_MockObjectStore("VRouterTenant")
+class MockAddressManagerServiceInstanceObjects(MockObjectStore): pass
+class MockAddressManagerServiceInstance(MockObject):
+    objects = get_MockObjectStore("AddressManagerServiceInstance")
     public_ip = None
     public_mac = None
     address_pool_id = None
@@ -243,45 +243,45 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         model_policy_vsgtenant.NetworkParameter = MockNetworkParameter
 
     @patch.object(VSGTenantPolicy, "manage_container")
-    @patch.object(VSGTenantPolicy, "manage_vrouter")
+    @patch.object(VSGTenantPolicy, "manage_address_service_instance")
     @patch.object(VSGTenantPolicy, "cleanup_orphans")
-    def test_handle_create(self, cleanup_orphans, manage_vrouter, manage_container):
+    def test_handle_create(self, cleanup_orphans, manage_address_service_instance, manage_container):
         self.policy.handle_create(self.tenant)
         manage_container.assert_called_with(self.tenant)
-        manage_vrouter.assert_called_with(self.tenant)
+        manage_address_service_instance.assert_called_with(self.tenant)
         cleanup_orphans.assert_called_with(self.tenant)
 
     @patch.object(VSGTenantPolicy, "manage_container")
-    @patch.object(VSGTenantPolicy, "manage_vrouter")
+    @patch.object(VSGTenantPolicy, "manage_address_service_instance")
     @patch.object(VSGTenantPolicy, "cleanup_orphans")
-    def test_handle_update(self, cleanup_orphans, manage_vrouter, manage_container):
+    def test_handle_update(self, cleanup_orphans, manage_address_service_instance, manage_container):
         self.policy.handle_create(self.tenant)
         manage_container.assert_called_with(self.tenant)
-        manage_vrouter.assert_called_with(self.tenant)
+        manage_address_service_instance.assert_called_with(self.tenant)
         cleanup_orphans.assert_called_with(self.tenant)
 
-    @patch.object(MockVRouterTenant, "delete")
-    def test_handle_delete_vrouter_exist(self, vroutertenant_delete):
-        vrtenant = MockVRouterTenant()
-        self.tenant.vrouter = vrtenant
+    @patch.object(MockAddressManagerServiceInstance, "delete")
+    def test_handle_delete_asi_exist(self, amsi_delete):
+        vrtenant = MockAddressManagerServiceInstance()
+        self.tenant.address_service_instance = vrtenant
         self.policy.handle_delete(self.tenant)
-        vroutertenant_delete.assert_called()
+        amsi_delete.assert_called()
 
-    @patch.object(MockVRouterTenant, "delete")
-    def test_handle_delete_vrouter_noexist(self, vroutertenant_delete):
-        self.tenant.vrouter = None
+    @patch.object(MockAddressManagerServiceInstance, "delete")
+    def test_handle_delete_asi_noexist(self, amsi_delete):
+        self.tenant.address_service_instance = None
         self.policy.handle_delete(self.tenant)
-        vroutertenant_delete.assert_not_called()
+        amsi_delete.assert_not_called()
 
-    @patch.object(MockVRouterTenantObjects, "get_items")
-    @patch.object(MockVRouterTenant, "delete")
-    def test_cleanup_orphans(self, vroutertenant_delete, vroutertenant_objects):
-        vrtenant = MockVRouterTenant(id=1)
-        self.tenant.vrouter = vrtenant
-        some_other_vrtenant = MockVRouterTenant(id=2, subscriber_tenant_id = self.tenant.id)
-        vroutertenant_objects.get_items = [some_other_vrtenant]
+    @patch.object(MockAddressManagerServiceInstanceObjects, "get_items")
+    @patch.object(MockAddressManagerServiceInstance, "delete")
+    def test_cleanup_orphans(self, amsi_delete, amsi_objects):
+        vrtenant = MockAddressManagerServiceInstance(id=1)
+        self.tenant.address_service_instance = vrtenant
+        some_other_vrtenant = MockAddressManagerServiceInstance(id=2, subscriber_tenant_id = self.tenant.id)
+        amsi_objects.get_items = [some_other_vrtenant]
         self.policy.handle_delete(self.tenant)
-        vroutertenant_delete.assert_called()
+        amsi_delete.assert_called()
 
     @patch.object(MockTag, "objects")
     def test_find_instance_for_s_tag_noexist(self, tag_objects):
@@ -430,7 +430,7 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
                               pick, get_psi, get_image, tenant_save, volt,
                               vsgservice_objects, flavor_objects, node_objects, npt_objects):
         # setup mocks
-        vrtenant = MockVRouterTenant(public_ip="1.2.3.4", public_mac="01:02:03:04:05:06")
+        vrtenant = MockAddressManagerServiceInstance(public_ip="1.2.3.4", public_mac="01:02:03:04:05:06")
         vsgservice=MockVSGService(name="myvsgservice", id=1, slices=MockObjectList(initial=[self.slice]))
         vsgservice_objects.return_value = [vsgservice]
         self.tenant.owner = vsgservice
@@ -474,7 +474,7 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         self.assertEqual(tag.value, "222")
         self.assertEqual(tag.object_id, instance.id)
 
-        # The instance should have a tag pointing to its vrouter
+        # The instance should have a tag pointing to its address_service_instance
         tag = MockTag.objects.get(name="vm_vrouter_tenant")
         self.assertNotEqual(tag.value, vrtenant.id)
         self.assertEqual(tag.object_id, instance.id)
@@ -483,13 +483,13 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         get_psi.assert_called()
 
     @patch.object(VSGTenantPolicy, "allocate_public_service_instance")
-    def test_manage_vrouter(self, get_psi):
-        vrtenant = MockVRouterTenant(public_ip="1.2.3.4", public_mac="01:02:03:04:05:06")
+    def test_manage_address_service_instance(self, get_psi):
+        vrtenant = MockAddressManagerServiceInstance(public_ip="1.2.3.4", public_mac="01:02:03:04:05:06")
         get_psi.return_value = vrtenant
 
-        self.tenant.vrouter = None
+        self.tenant.address_service_instance = None
 
-        self.policy.manage_vrouter(self.tenant)
+        self.policy.manage_address_service_instance(self.tenant)
 
         get_psi.assert_called_with(address_pool_name="addresses_vsg", subscriber_tenant=self.tenant)
 
