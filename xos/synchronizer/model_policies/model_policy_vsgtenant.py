@@ -25,6 +25,12 @@ class VSGTenantPolicy(TenantWithContainerPolicy):
         return self.handle_update(tenant)
 
     def handle_update(self, tenant):
+        if (tenant.link_deleted_count>0) and (not tenant.provided_links.exists()):
+            # if the last provided_link has just gone away, then self-destruct
+            self.logger.info("The last provided link has been deleted -- self-destructing.");
+            tenant.delete()
+            return
+
         self.manage_container(tenant)
         self.manage_address_service_instance(tenant)
         self.cleanup_orphans(tenant)
