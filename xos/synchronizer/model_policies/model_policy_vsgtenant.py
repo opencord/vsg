@@ -28,7 +28,18 @@ class VSGTenantPolicy(TenantWithContainerPolicy):
         if (tenant.link_deleted_count>0) and (not tenant.provided_links.exists()):
             # if the last provided_link has just gone away, then self-destruct
             self.logger.info("The last provided link has been deleted -- self-destructing.");
-            tenant.delete()
+            # TODO: We shouldn't have to call handle_delete ourselves. The model policy framework should handle this
+            #       for us, but it isn't. I think that's happening is that tenant.delete() isn't setting a new
+            #       updated timestamp, since there's no way to pass `always_update_timestamp`, and therefore the
+            #       policy framework doesn't know that the object has changed and needs new policies. For now, the
+            #       workaround is to just call handle_delete ourselves.
+            self.handle_delete(tenant)
+            # Note that if we deleted the Instance in handle_delete, then django may have cascade-deleted the tenant
+            # by now. Thus we have to guard our delete, to check that the tenant still exists.
+            if VSGTenant.objects.filter(id=tenant.id).exists():
+                tenant.delete()
+            else:
+                self.logger.info("Tenant %s is already deleted" % tenant)
             return
 
         self.manage_container(tenant)
@@ -36,8 +47,14 @@ class VSGTenantPolicy(TenantWithContainerPolicy):
         self.cleanup_orphans(tenant)
 
     def handle_delete(self, tenant):
-        if tenant.address_service_instance:
-            tenant.address_service_instance.delete()
+        if tenant.instance and (not tenant.instance.deleted):
+            all_tenants_this_instance = VSGTenant.objects.filter(instance_id=tenant.instance.id)
+            other_tenants_this_instance = [x for x in all_tenants_this_instance if x.id != tenant.id]
+            if (not other_tenants_this_instance):
+                self.logger.info("VSG Instance %s is now unused -- deleting" % tenant.instance)
+                self.delete_instance(tenant, tenant.instance)
+            else:
+                self.logger.info("VSG Instance %s has %d other service instances attached" % (tenant.instance, len(other_tenants_this_instance)))
 
     def manage_address_service_instance(self, tenant):
         if tenant.deleted:
@@ -153,6 +170,27 @@ class VSGTenantPolicy(TenantWithContainerPolicy):
         else:
             p = NetworkParameter(parameter=pt, content_type=port.self_content_type_id, object_id=port.id, value=str(value))
             p.save()
+
+    def delete_instance(self, tenant, instance):
+        # delete the `s_tag` tags
+        tags = Tag.objects.filter(service_id=tenant.owner.id, content_type=instance.self_content_type_id,
+                                  object_id=instance.id, name="s_tag")
+        for tag in tags:
+            tag.delete()
+
+        tags = Tag.objects.filter(content_type=instance.self_content_type_id, object_id=instance.id,
+                                  name="vm_vrouter_tenant")
+        for tag in tags:
+            address_manager_instances = list(ServiceInstance.objects.filter(id=tag.value))
+            tag.delete()
+
+            # TODO: Potential partial failure
+
+            for address_manager_instance in address_manager_instances:
+                self.logger.info("Deleting address_manager_instance %s" % address_manager_instance)
+                address_manager_instance.delete()
+
+        instance.delete()
 
     def save_instance(self, tenant, instance):
         instance.volumes = "/etc/dnsmasq.d,/etc/ufw"

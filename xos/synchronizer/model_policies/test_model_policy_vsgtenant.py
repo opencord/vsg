@@ -176,6 +176,14 @@ class MockPort(MockObject):
     def set_parameter(self, name, value):
         pass
 
+class MockServiceInstanceLinkObjects(MockObjectStore): pass
+class MockServiceInstanceLink(MockObject):
+    objects = get_MockObjectStore("ServiceInstanceLink")
+    provider_service_instance = None
+    subscriber_service_instance = None
+    def __init__(self, **kwargs):
+        super(MockServiceInstanceLink, self).__init__(**kwargs)
+
 class MockAddressManagerServiceInstanceObjects(MockObjectStore): pass
 class MockAddressManagerServiceInstance(MockObject):
     objects = get_MockObjectStore("AddressManagerServiceInstance")
@@ -208,6 +216,7 @@ class MockVSGTenant(MockObject):
     instance = None
     creator = None
     volt = None
+    link_deleted_count = 0
     service_specific_attribute = {}
 
     def get_image(self):
@@ -241,6 +250,7 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         model_policy_vsgtenant.Port = MockPort
         model_policy_vsgtenant.NetworkParameterType = MockNetworkParameterType
         model_policy_vsgtenant.NetworkParameter = MockNetworkParameter
+        model_policy_vsgtenant.AddressManagerServiceInstance = MockAddressManagerServiceInstance
 
     @patch.object(VSGTenantPolicy, "manage_container")
     @patch.object(VSGTenantPolicy, "manage_address_service_instance")
@@ -265,7 +275,9 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         vrtenant = MockAddressManagerServiceInstance()
         self.tenant.address_service_instance = vrtenant
         self.policy.handle_delete(self.tenant)
-        amsi_delete.assert_called()
+        # The delete model_policy no longer deletes the AddressManagerServiceInstance. It's now handled by logic in
+        # ServiceInstanceLink, together with model_policies in the target object.
+        amsi_delete.assert_not_called()
 
     @patch.object(MockAddressManagerServiceInstance, "delete")
     def test_handle_delete_asi_noexist(self, amsi_delete):
@@ -278,9 +290,11 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
     def test_cleanup_orphans(self, amsi_delete, amsi_objects):
         vrtenant = MockAddressManagerServiceInstance(id=1)
         self.tenant.address_service_instance = vrtenant
-        some_other_vrtenant = MockAddressManagerServiceInstance(id=2, subscriber_tenant_id = self.tenant.id)
-        amsi_objects.get_items = [some_other_vrtenant]
-        self.policy.handle_delete(self.tenant)
+        some_other_vrtenant = MockAddressManagerServiceInstance(id=2)
+        link = MockServiceInstanceLink(subscriber_service_instance=self.tenant, provider_service_instance=some_other_vrtenant)
+        self.tenant.subscribed_links = MockObjectList(initial=[link])
+        amsi_objects.return_value = [some_other_vrtenant]
+        self.policy.cleanup_orphans(self.tenant)
         amsi_delete.assert_called()
 
     @patch.object(MockTag, "objects")
