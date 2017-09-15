@@ -34,34 +34,34 @@ logger = Logger(level=logging.INFO)
 
 ENABLE_QUICK_UPDATE=False
 
-class SyncVSGTenant(SyncInstanceUsingAnsible):
-    provides=[VSGTenant]
-    observes=VSGTenant
+class SyncVSGServiceInstance(SyncInstanceUsingAnsible):
+    provides=[VSGServiceInstance]
+    observes=VSGServiceInstance
     requested_interval=0
-    template_name = "sync_vcpetenant.yaml"
+    template_name = "sync_vsgserviceinstance.yaml"
     watches = [ModelLink(ServiceDependency,via='servicedependency'), ModelLink(ServiceMonitoringAgentInfo,via='monitoringagentinfo')]
 
     def __init__(self, *args, **kwargs):
-        super(SyncVSGTenant, self).__init__(*args, **kwargs)
+        super(SyncVSGServiceInstance, self).__init__(*args, **kwargs)
 
-    def get_vcpe_service(self, o):
+    def get_vsg_service(self, o):
         if not o.owner:
             return None
 
-        vcpes = VSGService.objects.filter(id=o.owner.id)
-        if not vcpes:
+        vsg_services = VSGService.objects.filter(id=o.owner.id)
+        if not vsg_services:
             return None
 
-        return vcpes[0]
+        return vsg_services[0]
 
     def get_extra_attributes(self, o):
         # This is a place to include extra attributes that aren't part of the
-        # object itself. In the case of vCPE, we need to know:
-        #   1) the addresses of dnsdemux, to setup dnsmasq in the vCPE
+        # object itself. In the case of vSG, we need to know:
+        #   1) the addresses of dnsdemux, to setup dnsmasq in the vSG
         #   2) CDN prefixes, so we know what URLs to send to dnsdemux
-        #   4) vlan_ids, for setting up networking in the vCPE VM
+        #   4) vlan_ids, for setting up networking in the vSG VM
 
-        vcpe_service = self.get_vcpe_service(o)
+        vsg_service = self.get_vsg_service(o)
 
         dnsdemux_ip = None
         cdn_prefixes = []
@@ -87,7 +87,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
         full_setup = True
 
         safe_macs=[]
-        if vcpe_service.url_filter_kind == "safebrowsing":
+        if vsg_service.url_filter_kind == "safebrowsing":
             if o.volt and o.volt.subscriber:
                 for user in o.volt.subscriber.devices:
                     level = user.get("level",None)
@@ -97,23 +97,23 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
                             safe_macs.append(mac)
 
         docker_opts = []
-        if vcpe_service.docker_insecure_registry:
-            reg_name = vcpe_service.docker_image_name.split("/",1)[0]
+        if vsg_service.docker_insecure_registry:
+            reg_name = vsg_service.docker_image_name.split("/",1)[0]
             docker_opts.append("--insecure-registry " + reg_name)
 
         fields = {"s_tags": s_tags,
                 "c_tags": c_tags,
-                "docker_remote_image_name": vcpe_service.docker_image_name,
-                "docker_local_image_name": vcpe_service.docker_image_name,
+                "docker_remote_image_name": vsg_service.docker_image_name,
+                "docker_local_image_name": vsg_service.docker_image_name,
                 "docker_opts": " ".join(docker_opts),
                 "dnsdemux_ip": dnsdemux_ip,
                 "cdn_prefixes": cdn_prefixes,
                 "full_setup": full_setup,
                 "isolation": o.instance.isolation,
                 "safe_browsing_macs": safe_macs,
-                "container_name": "vcpe-%s-%s" % (s_tags[0], c_tags[0]),
-                "dns_servers": [x.strip() for x in vcpe_service.dns_servers.split(",")],
-                "url_filter_kind": vcpe_service.url_filter_kind }
+                "container_name": "vsg-%s-%s" % (s_tags[0], c_tags[0]),
+                "dns_servers": [x.strip() for x in vsg_service.dns_servers.split(",")],
+                "url_filter_kind": vsg_service.url_filter_kind }
 
         # add in the sync_attributes that come from the SubscriberRoot object
 
@@ -125,7 +125,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
 
     def sync_fields(self, o, fields):
         # the super causes the playbook to be run
-        super(SyncVSGTenant, self).sync_fields(o, fields)
+        super(SyncVSGServiceInstance, self).sync_fields(o, fields)
 
     def run_playbook(self, o, fields):
         ansible_hash = hashlib.md5(repr(sorted(fields.items()))).hexdigest()
@@ -135,17 +135,16 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
             logger.info("quick_update triggered; skipping ansible recipe",extra=o.tologdict())
         else:
             if o.instance.isolation in ["container", "container_vm"]:
-                raise Exception("probably not implemented")
-                super(SyncVSGTenant, self).run_playbook(o, fields, "sync_vcpetenant_new.yaml")
+                raise Exception("Not implemented")
             else:
-                super(SyncVSGTenant, self).run_playbook(o, fields, template_name="sync_vcpetenant_vtn.yaml")
+                super(SyncVSGServiceInstance, self).run_playbook(o, fields)
 
         o.last_ansible_hash = ansible_hash
 
     def sync_record(self, o):
         if (not o.policed) or (o.policed<o.updated):
             self.defer_sync(o, "waiting on model policy")
-        super(SyncVSGTenant, self).sync_record(o)
+        super(SyncVSGServiceInstance, self).sync_record(o)
 
     def delete_record(self, o):
         if (not o.policed) or (o.policed<o.updated):
@@ -161,7 +160,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
             logger.info("handle watch notifications for service monitoring agent info...ignoring because target_uri attribute in monitoring agent info:%s is null" % (monitoring_agent_info))
             return
 
-        objs = VSGTenant.objects.all()
+        objs = VSGServiceInstance.objects.all()
         for obj in objs:
             if obj.owner.id != monitoring_agent_info.service.id:
                 logger.info("handle watch notifications for service monitoring agent info...ignoring because service attribute in monitoring agent info:%s is not matching" % (monitoring_agent_info))
@@ -172,7 +171,7 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
                logger.warn("handle watch notifications for service monitoring agent info...: No valid instance found for object %s" % (str(obj)))
                return
 
-            logger.info("handling watch notification for monitoring agent info:%s for VSGTenant object:%s" % (monitoring_agent_info, obj))
+            logger.info("handling watch notification for monitoring agent info:%s for VSGServiceInstance object:%s" % (monitoring_agent_info, obj))
 
             #Run ansible playbook to update the routing table entries in the instance
             fields = self.get_ansible_fields(instance)
@@ -187,5 +186,5 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
             fields["rabbit_host"] = url.hostname
 
             template_name = "sync_monitoring_agent.yaml"
-            super(SyncVSGTenant, self).run_playbook(obj, fields, template_name)
+            super(SyncVSGServiceInstance, self).run_playbook(obj, fields, template_name)
 
