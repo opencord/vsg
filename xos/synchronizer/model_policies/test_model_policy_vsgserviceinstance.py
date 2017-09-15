@@ -27,8 +27,8 @@ Config.init(config, 'synchronizer-config-schema.yaml')
 import synchronizers.new_base.modelaccessor
 
 import synchronizers.new_base.model_policies.model_policy_tenantwithcontainer
-import model_policy_vsgtenant
-from model_policy_vsgtenant import VSGTenantPolicy
+import model_policy_vsgserviceinstance
+from model_policy_vsgserviceinstance import VSGServiceInstancePolicy
 from synchronizers.new_base.model_policies.model_policy_tenantwithcontainer import LeastLoadedNodeScheduler
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -227,9 +227,9 @@ class MockVSGService(MockObject):
     def __init__(self, **kwargs):
         super(MockVSGService, self).__init__(**kwargs)
 
-class MockVSGTenantObjects(MockObjectStore): pass
-class MockVSGTenant(MockObject):
-    objects = get_MockObjectStore("VSGTenant")
+class MockVSGServiceInstanceObjects(MockObjectStore): pass
+class MockVSGServiceInstance(MockObject):
+    objects = get_MockObjectStore("VSGServiceInstance")
     owner = None
     deleted = False
     instance = None
@@ -247,15 +247,15 @@ class MockVSGTenant(MockObject):
 
 class TestModelPolicyVsgTenant(unittest.TestCase):
     def setUp(self):
-        # Some of the functions we call have side-effects. For example, creating a VSGTenant may lead to creation of
+        # Some of the functions we call have side-effects. For example, creating a VSGServiceInstance may lead to creation of
         # tags. Ideally, this wouldn't happen, but it does. So make sure we reset the world.
         for store in AllMockObjectStores:
             store.items = []
 
-        self.policy = VSGTenantPolicy()
-        self.tenant = MockVSGTenant()
+        self.policy = VSGServiceInstancePolicy()
+        self.tenant = MockVSGServiceInstance()
         self.user = MockUser(email="testadmin@test.org")
-        self.tenant = MockVSGTenant(creator=self.user, id=1)
+        self.tenant = MockVSGServiceInstance(creator=self.user, id=1)
         self.flavor = MockFlavor(name="m1.small")
         self.npt_ctag = MockNetworkParameterType(name="c_tag", id=1)
         self.npt_stag = MockNetworkParameterType(name="s_tag", id=2)
@@ -270,32 +270,32 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         synchronizers.new_base.model_policies.model_policy_tenantwithcontainer.Flavor = MockFlavor
         synchronizers.new_base.model_policies.model_policy_tenantwithcontainer.Tag = MockTag
         synchronizers.new_base.model_policies.model_policy_tenantwithcontainer.Node = MockNode
-        model_policy_vsgtenant.Instance = MockInstance
-        model_policy_vsgtenant.Flavor = MockFlavor
-        model_policy_vsgtenant.Tag = MockTag
-        model_policy_vsgtenant.VSGService = MockVSGService
-        model_policy_vsgtenant.VSGTenant = MockVSGTenant
-        model_policy_vsgtenant.Node = MockNode
-        model_policy_vsgtenant.Port = MockPort
-        model_policy_vsgtenant.NetworkParameterType = MockNetworkParameterType
-        model_policy_vsgtenant.NetworkParameter = MockNetworkParameter
-        model_policy_vsgtenant.ServiceInstance = MockServiceInstance
-        model_policy_vsgtenant.AddressManagerServiceInstance = MockAddressManagerServiceInstance
+        model_policy_vsgserviceinstance.Instance = MockInstance
+        model_policy_vsgserviceinstance.Flavor = MockFlavor
+        model_policy_vsgserviceinstance.Tag = MockTag
+        model_policy_vsgserviceinstance.VSGService = MockVSGService
+        model_policy_vsgserviceinstance.VSGServiceInstance = MockVSGServiceInstance
+        model_policy_vsgserviceinstance.Node = MockNode
+        model_policy_vsgserviceinstance.Port = MockPort
+        model_policy_vsgserviceinstance.NetworkParameterType = MockNetworkParameterType
+        model_policy_vsgserviceinstance.NetworkParameter = MockNetworkParameter
+        model_policy_vsgserviceinstance.ServiceInstance = MockServiceInstance
+        model_policy_vsgserviceinstance.AddressManagerServiceInstance = MockAddressManagerServiceInstance
 
         MockTag.objects.item_list = []
 
-    @patch.object(VSGTenantPolicy, "manage_container")
-    @patch.object(VSGTenantPolicy, "manage_address_service_instance")
-    @patch.object(VSGTenantPolicy, "cleanup_orphans")
+    @patch.object(VSGServiceInstancePolicy, "manage_container")
+    @patch.object(VSGServiceInstancePolicy, "manage_address_service_instance")
+    @patch.object(VSGServiceInstancePolicy, "cleanup_orphans")
     def test_handle_create(self, cleanup_orphans, manage_address_service_instance, manage_container):
         self.policy.handle_create(self.tenant)
         manage_container.assert_called_with(self.tenant)
         manage_address_service_instance.assert_called_with(self.tenant)
         cleanup_orphans.assert_called_with(self.tenant)
 
-    @patch.object(VSGTenantPolicy, "manage_container")
-    @patch.object(VSGTenantPolicy, "manage_address_service_instance")
-    @patch.object(VSGTenantPolicy, "cleanup_orphans")
+    @patch.object(VSGServiceInstancePolicy, "manage_container")
+    @patch.object(VSGServiceInstancePolicy, "manage_address_service_instance")
+    @patch.object(VSGServiceInstancePolicy, "cleanup_orphans")
     def test_handle_update(self, cleanup_orphans, manage_address_service_instance, manage_container):
         self.policy.handle_create(self.tenant)
         manage_container.assert_called_with(self.tenant)
@@ -317,10 +317,10 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         self.policy.handle_delete(self.tenant)
         amsi_delete.assert_not_called()
 
-    @patch.object(MockVSGTenantObjects, "get_items")
+    @patch.object(MockVSGServiceInstanceObjects, "get_items")
     @patch.object(MockInstanceObjects, "get_items")
     @patch.object(MockInstance, "delete")
-    def test_handle_delete_cleanup_instance(self, instance_delete, instance_objects, vsgtenant_objects):
+    def test_handle_delete_cleanup_instance(self, instance_delete, instance_objects, vsgserviceinstance_objects):
         vsg_service = MockVSGService()
         instance = MockInstance(id=1)
         instance_objects.return_value = [instance]
@@ -328,14 +328,14 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         self.tenant.instance = instance
         self.tenant.instance_id = instance.id
         self.tenant.owner = vsg_service
-        vsgtenant_objects.return_value = [self.tenant]
+        vsgserviceinstance_objects.return_value = [self.tenant]
         self.policy.handle_delete(self.tenant)
         instance_delete.assert_called()
 
-    @patch.object(MockVSGTenantObjects, "get_items")
+    @patch.object(MockVSGServiceInstanceObjects, "get_items")
     @patch.object(MockInstanceObjects, "get_items")
     @patch.object(MockInstance, "delete")
-    def test_handle_delete_cleanup_instance_live(self, instance_delete, instance_objects, vsgtenant_objects):
+    def test_handle_delete_cleanup_instance_live(self, instance_delete, instance_objects, vsgserviceinstance_objects):
         # Make sure if an Instance still has active VSG Tenants, that we don't clean it up
         vsg_service = MockVSGService()
         instance = MockInstance(id=1)
@@ -345,13 +345,13 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         self.tenant.instance_id = instance.id
         self.tenant.owner = vsg_service
 
-        other_tenant = MockVSGTenant()
+        other_tenant = MockVSGServiceInstance()
         other_tenant.address_service_instance = None
         other_tenant.instance = instance
         other_tenant.instance_id = instance.id
         other_tenant.owner = vsg_service
 
-        vsgtenant_objects.return_value = [self.tenant, other_tenant]
+        vsgserviceinstance_objects.return_value = [self.tenant, other_tenant]
 
         self.policy.handle_delete(self.tenant)
         instance_delete.assert_not_called()
@@ -359,13 +359,13 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
     @patch.object(MockServiceInstanceObjects, "get_items")
     @patch.object(MockAddressManagerServiceInstanceObjects, "get_items")
     @patch.object(MockTagObjects, "get_items")
-    @patch.object(MockVSGTenantObjects, "get_items")
+    @patch.object(MockVSGServiceInstanceObjects, "get_items")
     @patch.object(MockInstanceObjects, "get_items")
     @patch.object(MockAddressManagerServiceInstance, "delete")
     @patch.object(MockTag, "delete")
     @patch.object(MockInstance, "delete")
     def test_handle_delete_cleanup_instance_and_tags_and_stuff(self, instance_delete, tag_delete, amsi_delete,
-                                                            instance_objects, vsgtenant_objects, tag_objects,
+                                                            instance_objects, vsgserviceinstance_objects, tag_objects,
                                                             amsi_objects, si_objects):
         vsg_service = MockVSGService()
         am_instance = MockAddressManagerServiceInstance()
@@ -377,7 +377,7 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         self.tenant.instance = instance
         self.tenant.instance_id = instance.id
         self.tenant.owner = vsg_service
-        vsgtenant_objects.return_value = [self.tenant]
+        vsgserviceinstance_objects.return_value = [self.tenant]
         stag_tag = MockTag(service_id=self.tenant.owner.id, content_type=instance.self_content_type_id,
                        object_id=instance.id, name="s_tag")
         vrouter_tag = MockTag(service_id=self.tenant.owner.id, content_type=instance.self_content_type_id,
@@ -420,9 +420,9 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
             self.policy.manage_container(self.tenant)
         self.assertEqual(e.exception.message, "This VSG container has no volt")
 
-    @patch.object(VSGTenantPolicy, "find_or_make_instance_for_s_tag")
-    @patch.object(MockVSGTenant, "save")
-    @patch.object(MockVSGTenant, "volt")
+    @patch.object(VSGServiceInstancePolicy, "find_or_make_instance_for_s_tag")
+    @patch.object(MockVSGServiceInstance, "save")
+    @patch.object(MockVSGServiceInstance, "volt")
     def test_manage_container_noinstance(self, volt, tenant_save, find_or_make_instance_for_s_tag):
         instance = MockInstance()
         volt.s_tag=222
@@ -432,9 +432,9 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         self.assertEqual(self.tenant.instance, instance)
         tenant_save.assert_called()
 
-    @patch.object(VSGTenantPolicy, "find_or_make_instance_for_s_tag")
-    @patch.object(MockVSGTenant, "save")
-    @patch.object(MockVSGTenant, "volt")
+    @patch.object(VSGServiceInstancePolicy, "find_or_make_instance_for_s_tag")
+    @patch.object(MockVSGServiceInstance, "save")
+    @patch.object(MockVSGServiceInstance, "volt")
     def test_manage_container_hasinstance(self, volt, tenant_save, find_or_make_instance_for_s_tag):
         instance = MockInstance()
         volt.s_tag=222
@@ -445,9 +445,9 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         self.assertEqual(self.tenant.instance, instance)
         tenant_save.assert_not_called()
 
-    @patch.object(VSGTenantPolicy, "find_or_make_instance_for_s_tag")
-    @patch.object(MockVSGTenant, "save")
-    @patch.object(MockVSGTenant, "volt")
+    @patch.object(VSGServiceInstancePolicy, "find_or_make_instance_for_s_tag")
+    @patch.object(MockVSGServiceInstance, "save")
+    @patch.object(MockVSGServiceInstance, "volt")
     def test_manage_container_deleted(self, volt, tenant_save, find_or_make_instance_for_s_tag):
         self.tenant.deleted = True
         self.policy.manage_container(self.tenant)
@@ -535,15 +535,15 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
     @patch.object(MockNodeObjects, "get_items")
     @patch.object(MockFlavorObjects, "get_items")
     @patch.object(MockVSGServiceObjects, "get_items")
-    @patch.object(MockVSGTenant, "volt")
-    @patch.object(MockVSGTenant, "save")
-    @patch.object(VSGTenantPolicy, "get_image")
-    @patch.object(VSGTenantPolicy, "allocate_public_service_instance")
+    @patch.object(MockVSGServiceInstance, "volt")
+    @patch.object(MockVSGServiceInstance, "save")
+    @patch.object(VSGServiceInstancePolicy, "get_image")
+    @patch.object(VSGServiceInstancePolicy, "allocate_public_service_instance")
     @patch.object(LeastLoadedNodeScheduler, "pick")
     @patch.object(MockNode, "site_deployment")
     @patch.object(MockInstance, "save")
     @patch.object(MockInstance, "delete")
-    @patch.object(VSGTenantPolicy, "port_set_parameter")
+    @patch.object(VSGServiceInstancePolicy, "port_set_parameter")
     def test_find_or_make_instance_for_s_tag(self, port_set_parameter, instance_delete, instance_save, site_deployment,
                               pick, get_psi, get_image, tenant_save, volt,
                               vsgservice_objects, flavor_objects, node_objects, npt_objects):
@@ -565,7 +565,7 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         # done setup mocks
 
         # call the function under test
-        instance = self.policy.find_or_make_instance_for_s_tag(self.tenant, self.tenant.volt.s_tag)
+        instance = self.policy.find_or_make_instance_for_s_tag(self.tenant)
 
         # make sure Instance was created
         self.assertNotEqual(instance, None)
@@ -600,7 +600,7 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         # Allocate_public_service_instance should have been called
         get_psi.assert_called()
 
-    @patch.object(VSGTenantPolicy, "allocate_public_service_instance")
+    @patch.object(VSGServiceInstancePolicy, "allocate_public_service_instance")
     def test_manage_address_service_instance(self, get_psi):
         vrtenant = MockAddressManagerServiceInstance(public_ip="1.2.3.4", public_mac="01:02:03:04:05:06")
         get_psi.return_value = vrtenant
