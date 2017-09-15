@@ -30,10 +30,7 @@ topology_template:
           # The following will concatenate with base_url automatically, if
           # base_url is non-null.
           xproto: ./
-          admin: admin.py
-          admin_template: templates/vcpeadmin.html
-          #tosca_custom_types: exampleservice.yaml
-          tosca_resource: tosca/resources/vcpeservice.py
+          tosca_resource: tosca/resources/vsgservice.py
           private_key: file:///opt/xos/key_import/vsg_rsa
           public_key: file:///opt/xos/key_import/vsg_rsa.pub
 
