@@ -14,10 +14,18 @@
 # limitations under the License.
 
 
----
-- hosts: {{ instance_name }}
-  connection: ssh
-  user: ubuntu
-  tasks:
-    - name: foobar
-      shell: echo foo > /tmp/foobar
+def __init__(self, *args, **kwargs):
+    super(VSGServiceInstance, self).__init__(*args, **kwargs)
+
+def save(self, *args, **kwargs):
+    if not self.creator:
+        if not getattr(self, "caller", None):
+            # caller must be set when creating a vCPE since it creates a slice
+            raise XOSProgrammingError("VSGServiceInstance's self.caller was not set")
+        self.creator = self.caller
+        if not self.creator:
+            raise XOSProgrammingError("VSGServiceInstance's self.creator was not set")
+
+    super(VSGServiceInstance, self).save(*args, **kwargs)
+
+

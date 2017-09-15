@@ -14,4 +14,4 @@
 # limitations under the License.
 
 
-python vcpe-synchronizer.py
+python vsg-synchronizer.py

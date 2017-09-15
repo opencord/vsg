@@ -1,4 +1,3 @@
-
 # Copyright 2017-present Open Networking Foundation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,5 +13,13 @@
 # limitations under the License.
 
 
-#! /bin/bash
-ansible-playbook --private-key /home/smbaker/.ssh/id_rsa -i ./inventory.txt test.yaml
+# Upstart script for vSG
+description "vSG container"
+author "andy@opennetworking.org"
+start on filesystem and started docker
+stop on runlevel [!2345]
+respawn
+
+script
+  /usr/local/sbin/start-vsg-{{ s_tags[0] }}-{{ c_tags[0] }}.sh
+end script
