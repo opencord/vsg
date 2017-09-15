@@ -1,3 +1,4 @@
+
 # Copyright 2017-present Open Networking Foundation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,13 +14,16 @@
 # limitations under the License.
 
 
-# Upstart script for vCPE
-description "vCPE container"
-author "andy@onlab.us"
-start on filesystem and started docker
-stop on runlevel [!2345]
-respawn
+def __init__(self, *args, **kwargs):
+    super(VSGServiceInstance, self).__init__(*args, **kwargs)
 
-script
-  /usr/local/sbin/start-vcpe-{{ s_tags[0] }}-{{ c_tags[0] }}.sh
-end script
+def __xos_save_base(self, *args, **kwargs):
+    if not self.creator:
+        if not getattr(self, "caller", None):
+            # caller must be set when creating a vCPE since it creates a slice
+            raise XOSProgrammingError("VSGServiceInstance's self.caller was not set")
+        self.creator = self.caller
+        if not self.creator:
+            raise XOSProgrammingError("VSGServiceInstance's self.creator was not set")
+
+    return False
