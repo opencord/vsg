@@ -27,8 +27,8 @@
       rabbit_host: {{ rabbit_host }}
 
   tasks:
-  - name: Verify if vcpe_stats_notifier ([] is to avoid capturing the shell process) cron job is already running
-    shell: pgrep -f [v]cpe_stats_notifier | wc -l
+  - name: Verify if vsg_stats_notifier ([] is to avoid capturing the shell process) cron job is already running
+    shell: pgrep -f [v]sg_stats_notifier | wc -l
     register: cron_job_pids_count
 
   - name: DEBUG
@@ -40,8 +40,8 @@
     when: cron_job_pids_count.stdout == "0"
 
   - name: Copy cron job to destination
-    copy: src=/opt/xos/synchronizers/vsg/vcpe_stats_notifier.py
-      dest=/usr/local/share/vsg_monitoring_agent/vcpe_stats_notifier.py
+    copy: src=/opt/xos/synchronizers/vsg/vsg_stats_notifier.py
+      dest=/usr/local/share/vsg_monitoring_agent/vsg_stats_notifier.py
     become: yes
     when: cron_job_pids_count.stdout == "0"
 
@@ -50,8 +50,8 @@
     become: yes
     when: cron_job_pids_count.stdout == "0"
 
-  - name: Initiate vcpe_stats_notifier cron job
-    command: sudo python /usr/local/share/vsg_monitoring_agent/vcpe_stats_notifier.py --keystone_tenant_id={{ keystone_tenant_id }} --keystone_user_id={{ keystone_user_id }} --rabbit_user={{ rabbit_user }} --rabbit_password={{ rabbit_password }} --rabbit_host={{ rabbit_host }} --vcpeservice_rabbit_exchange='vcpeservice'
+  - name: Initiate vsg_stats_notifier cron job
+    command: sudo python /usr/local/share/vsg_monitoring_agent/vsg_stats_notifier.py --keystone_tenant_id={{ keystone_tenant_id }} --keystone_user_id={{ keystone_user_id }} --rabbit_user={{ rabbit_user }} --rabbit_password={{ rabbit_password }} --rabbit_host={{ rabbit_host }} --vcpeservice_rabbit_exchange='vcpeservice'
     async: 9999999999999999
     poll: 0
     become: yes
