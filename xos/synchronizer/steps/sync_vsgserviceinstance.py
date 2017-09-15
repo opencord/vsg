@@ -34,11 +34,11 @@ logger = Logger(level=logging.INFO)
 
 ENABLE_QUICK_UPDATE=False
 
-class SyncVSGTenant(SyncInstanceUsingAnsible):
-    provides=[VSGTenant]
-    observes=VSGTenant
+class SyncVSGServiceInstance(SyncInstanceUsingAnsible):
+    provides=[VSGServiceInstance]
+    observes=VSGServiceInstance
     requested_interval=0
-    template_name = "sync_vcpetenant.yaml"
+    template_name = "sync_vsgserviceinstance.yaml"
     watches = [ModelLink(ServiceDependency,via='servicedependency'), ModelLink(ServiceMonitoringAgentInfo,via='monitoringagentinfo')]
 
     def __init__(self, *args, **kwargs):
@@ -135,10 +135,10 @@ class SyncVSGTenant(SyncInstanceUsingAnsible):
             logger.info("quick_update triggered; skipping ansible recipe",extra=o.tologdict())
         else:
             if o.instance.isolation in ["container", "container_vm"]:
-                raise Exception("probably not implemented")
+                raise Exception("Not implemented")
                 super(SyncVSGTenant, self).run_playbook(o, fields, "sync_vcpetenant_new.yaml")
             else:
-                super(SyncVSGTenant, self).run_playbook(o, fields, template_name="sync_vcpetenant_vtn.yaml")
+                super(SyncVSGTenant, self).run_playbook(o, fields)
 
         o.last_ansible_hash = ansible_hash
 
