@@ -19,7 +19,9 @@ sync_attributes = ("wan_container_ip", "wan_container_mac", "wan_container_netbi
                    "wan_vm_ip", "wan_vm_mac")
 
 def __init__(self, *args, **kwargs):
-    super(VSGTenant, self).__init__(*args, **kwargs)
+    super(VSGServiceInstance, self).__init__(*args, **kwargs)
+
+"""
     self.cached_address_service_instance=None
 
 @property
@@ -38,7 +40,7 @@ def address_service_instance(self):
 
 @address_service_instance.setter
 def address_service_instance(self, value):
-    raise XOSConfigurationError("VSGTenant.address_service_instance setter is not implemented")
+    raise XOSConfigurationError("VSGServiceInstance.address_service_instance setter is not implemented")
 
 @property
 def volt(self):
@@ -52,7 +54,7 @@ def volt(self):
 
 @volt.setter
 def volt(self, value):
-    raise XOSConfigurationError("VSGTenant.volt setter is not implemented")
+    raise XOSConfigurationError("VSGServiceInstance.volt setter is not implemented")
 
 @property
 def ssh_command(self):
@@ -112,18 +114,17 @@ def is_synced(self):
 @is_synced.setter
 def is_synced(self, value):
     pass
+"""
 
 def save(self, *args, **kwargs):
     if not self.creator:
         if not getattr(self, "caller", None):
             # caller must be set when creating a vCPE since it creates a slice
-            raise XOSProgrammingError("VSGTenant's self.caller was not set")
+            raise XOSProgrammingError("VSGServiceInstance's self.caller was not set")
         self.creator = self.caller
         if not self.creator:
-            raise XOSProgrammingError("VSGTenant's self.creator was not set")
+            raise XOSProgrammingError("VSGServiceInstance's self.creator was not set")
 
-    super(VSGTenant, self).save(*args, **kwargs)
+    super(VSGServiceInstance, self).save(*args, **kwargs)
 
-def delete(self, *args, **kwargs):
-    super(VSGTenant, self).delete(*args, **kwargs)
 
