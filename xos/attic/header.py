@@ -24,6 +24,7 @@ from django.db.models import *
 from operator import itemgetter, attrgetter, methodcaller
 from core.models import Tag
 from core.models.service import LeastLoadedNodeScheduler
+# TODO: Break hardcoded dependencies / See if the addressmanager can be removed
 from services.addressmanager.models import AddressManagerService, AddressManagerServiceInstance
 import traceback
 from xos.exceptions import *
@@ -32,6 +33,5 @@ from django.contrib.contenttypes.models import ContentType
 class ConfigurationError(Exception):
     pass
 
-VCPE_KIND = "vCPE"
-CORD_SUBSCRIBER_KIND = "CordSubscriberRoot"
+
 
