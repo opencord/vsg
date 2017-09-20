@@ -113,7 +113,7 @@ def is_synced(self):
 def is_synced(self, value):
     pass
 
-def save(self, *args, **kwargs):
+def __xos_save_base(self, *args, **kwargs):
     if not self.creator:
         if not getattr(self, "caller", None):
             # caller must be set when creating a vCPE since it creates a slice
@@ -122,7 +122,7 @@ def save(self, *args, **kwargs):
         if not self.creator:
             raise XOSProgrammingError("VSGTenant's self.creator was not set")
 
-    super(VSGTenant, self).save(*args, **kwargs)
+    return False
 
 def delete(self, *args, **kwargs):
     super(VSGTenant, self).delete(*args, **kwargs)
