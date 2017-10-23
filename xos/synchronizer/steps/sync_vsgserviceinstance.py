@@ -89,7 +89,7 @@ class SyncVSGServiceInstance(SyncInstanceUsingAnsible):
         safe_macs=[]
         if vsg_service.url_filter_kind == "safebrowsing":
             if o.volt and o.volt.subscriber:
-                for user in o.volt.subscriber.devices:
+                for user in o.volt.subscriber.devices and hasattr(o.volt.subscriber, "devices"):
                     level = user.get("level",None)
                     mac = user.get("mac",None)
                     if level in ["G", "PG"]:
@@ -115,8 +115,18 @@ class SyncVSGServiceInstance(SyncInstanceUsingAnsible):
                 "dns_servers": [x.strip() for x in vsg_service.dns_servers.split(",")],
                 "url_filter_kind": vsg_service.url_filter_kind }
 
-        # add in the sync_attributes that come from the SubscriberRoot object
+        # Some subscriber models may not implement all fields that we look for, so specify some defaults.
+        fields["firewall_rules"] = ""
+        fields["firewall_enable"] = False
+        fields["url_filter_enable"] = False
+        fields["url_filter_level"] = "PG"
+        fields["cdn_enable"] = False
+        fields["uplink_speed"] = 1000000000
+        fields["downlink_speed"] = 1000000000
+        fields["enable_uverse"] = True
+        fields["status"] = "enabled"
 
+        # add in the sync_attributes that come from the subscriber object
         if o.volt and o.volt.subscriber and hasattr(o.volt.subscriber, "sync_attributes"):
             for attribute_name in o.volt.subscriber.sync_attributes:
                 fields[attribute_name] = getattr(o.volt.subscriber, attribute_name)
