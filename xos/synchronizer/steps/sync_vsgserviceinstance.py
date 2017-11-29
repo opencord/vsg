@@ -45,14 +45,7 @@ class SyncVSGServiceInstance(SyncInstanceUsingAnsible):
         super(SyncVSGServiceInstance, self).__init__(*args, **kwargs)
 
     def get_vsg_service(self, o):
-        if not o.owner:
-            return None
-
-        vsg_services = VSGService.objects.filter(id=o.owner.id)
-        if not vsg_services:
-            return None
-
-        return vsg_services[0]
+        return o.owner.leaf_model
 
     def get_extra_attributes(self, o):
         # This is a place to include extra attributes that aren't part of the
