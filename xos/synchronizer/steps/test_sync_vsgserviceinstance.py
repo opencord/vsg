@@ -1,0 +1,213 @@
+
+# Copyright 2017-present Open Networking Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+import unittest
+from mock import patch, call, Mock, PropertyMock
+import mock
+
+import os, sys
+
+test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+service_dir=os.path.join(test_path, "../../../..")
+xos_dir=os.path.join(test_path, "../../..")
+if not os.path.exists(os.path.join(test_path, "new_base")):
+    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
+    services_dir=os.path.join(xos_dir, "../../xos_services")
+
+class TestSyncVSGServiceInstance(unittest.TestCase):
+    def setUp(self):
+        global SyncVSGServiceInstance, LeastLoadedNodeScheduler, MockObjectList
+
+        self.sys_path_save = sys.path
+        sys.path.append(xos_dir)
+        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
+
+        config = os.path.join(test_path, "test_config.yaml")
+        from xosconfig import Config
+        Config.clear()
+        Config.init(config, 'synchronizer-config-schema.yaml')
+
+        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
+        build_mock_modelaccessor(xos_dir, services_dir, ["vsg/xos/vsg.xproto", "addressmanager/xos/addressmanager.xproto"])
+
+        import synchronizers.new_base.modelaccessor
+        import synchronizers.new_base.model_policies.model_policy_tenantwithcontainer
+        import sync_vsgserviceinstance
+        from sync_vsgserviceinstance import SyncVSGServiceInstance, model_accessor
+
+        from mock_modelaccessor import MockObjectList
+
+        # import all class names to globals
+        for (k, v) in model_accessor.all_model_classes.items():
+            globals()[k] = v
+
+        # Some of the functions we call have side-effects. For example, creating a VSGServiceInstance may lead to creation of
+        # tags. Ideally, this wouldn't happen, but it does. So make sure we reset the world.
+        model_accessor.reset_all_object_stores()
+
+        # attic functions that are not present in the mock model accessor
+        VSGServiceInstance.volt = PropertyMock(return_value = None)
+        AddressManagerServiceInstance.set_attribute = Mock()
+
+        self.syncstep = SyncVSGServiceInstance()
+        self.user = User(email="testadmin@test.org")
+        self.service = VSGService(name="the_vsg_service",
+                                  id=1,
+                                  docker_image_name="reg/vsg_docker",
+                                  docker_insecure_registry=True,
+                                  dns_servers="dnsone,dnstwo",
+                                  url_filter_kind=None,
+                                  private_key_fn=os.path.join(test_path, "test_private_key"))
+        self.tenant = VSGServiceInstance(creator=self.user, id=401)
+        self.flavor = Flavor(name="m1.small")
+        self.npt_ctag = NetworkParameterType(name="c_tag", id=1)
+        self.npt_stag = NetworkParameterType(name="s_tag", id=2)
+        self.npt_neutron_port_name = NetworkParameterType(name="neutron_port_name", id=501)
+        self.priv_template = NetworkTemplate(name="access_network", visibility="private")
+        self.priv_network = Network(name="mysite_test1_private", template=self.priv_template)
+        self.image = Image(name="trusty-server-multi-nic")
+        self.deployment = Deployment(name="testdeployment")
+        self.user = User(email="smbaker", id=701)
+        self.controller = Controller(id=101)
+        self.controllerslice = ControllerSlice(slice_id=self.slice.id, controller_id=self.controller.id, id=201)
+        self.controlleruser = ControllerUser(user_id=self.user.id, controller_id=self.controller.id, id=601)
+        self.node = Node(name="testnode")
+        self.slice = Slice(name="mysite_test1", default_flavor=self.flavor, default_isolation="vm", service=self.service, id=301)
+        self.instance = Instance(slice=self.slice,
+                            instance_name="testinstance1_instance_name",
+                            instance_id="testinstance1_instance_id",
+                            name="testinstance1_name",
+                            node=self.node,
+                            creator=self.user,
+                            controller=self.controller)
+        self.instance.get_ssh_ip = Mock(return_value="1.2.3.4")
+        Tag.objects.item_list = []
+
+    def tearDown(self):
+        sys.path = self.sys_path_save
+
+    def test_get_vsg_service(self):
+        with patch.object(VSGService.objects, "get_items") as vsgservice_objects:
+            vsgservice_objects.return_value = [self.service]
+
+            self.tenant.owner = self.service
+
+            self.assertEqual(self.syncstep.get_vsg_service(self.tenant), self.service)
+
+    def test_get_extra_attributes(self):
+        with patch.object(VSGService.objects, "get_items") as vsgservice_objects, \
+             patch.object(VSGServiceInstance, "volt") as si_volt:
+            vsgservice_objects.return_value = [self.service]
+
+            si_volt.s_tag = 111
+            si_volt.c_tag = 222
+
+            self.tenant.owner = self.service
+            self.tenant.instance = self.instance
+
+            attrs = self.syncstep.get_extra_attributes(self.tenant)
+
+            self.assertEqual(attrs.get("s_tags"), [111])
+            self.assertEqual(attrs.get("c_tags"), [222])
+            self.assertEqual(attrs.get("docker_remote_image_name"), "reg/vsg_docker")
+            self.assertEqual(attrs.get("docker_local_image_name"), "reg/vsg_docker")
+            self.assertEqual(attrs.get("docker_opts"), "--insecure-registry reg")
+            self.assertEqual(attrs.get("dnsdemux_ip"), "none")
+            self.assertEqual(attrs.get("cdn_prefixes"), [])
+            self.assertEqual(attrs.get("full_setup"), True)
+            self.assertEqual(attrs.get("isolation"), "vm")
+            self.assertEqual(attrs.get("safe_browsing_macs"), [])
+            self.assertEqual(attrs.get("container_name"), "vsg-111-222")
+            self.assertEqual(attrs.get("dns_servers"), ["dnsone", "dnstwo"])
+            self.assertEqual(attrs.get("url_filter_kind"), None)
+
+            self.assertEqual(attrs.get("firewall_rules"), "")
+            self.assertEqual(attrs.get("firewall_enable"), False)
+            self.assertEqual(attrs.get("url_filter_enable"), False)
+            self.assertEqual(attrs.get("url_filter_level"), "PG")
+            self.assertEqual(attrs.get("cdn_enable"), False)
+            self.assertEqual(attrs.get("uplink_speed"), 1000000000)
+            self.assertEqual(attrs.get("downlink_speed"), 1000000000)
+            self.assertEqual(attrs.get("enable_uverse"), True)
+            self.assertEqual(attrs.get("status"), "enabled")
+
+    def test_sync_record(self):
+        with patch.object(VSGService.objects, "get_items") as vsgservice_objects, \
+                patch.object(Slice.objects, "get_items") as slice_objects, \
+                patch.object(User.objects, "get_items") as user_objects, \
+                patch.object(ControllerSlice.objects, "get_items") as controllerslice_objects, \
+                patch.object(ControllerUser.objects, "get_items") as controlleruser_objects, \
+                patch.object(VSGServiceInstance, "volt") as si_volt, \
+                patch.object(SyncVSGServiceInstance, "run_playbook") as run_playbook:
+            slice_objects.return_value = [self.slice]
+            vsgservice_objects.return_value = [self.service]
+            controllerslice_objects.return_value = [self.controllerslice]
+            controlleruser_objects.return_value = [self.controlleruser]
+            user_objects.return_value = [self.user]
+
+            si_volt.s_tag = 111
+            si_volt.c_tag = 222
+
+            self.tenant.owner = self.service
+            self.tenant.instance = self.instance
+            self.tenant.updated = 10
+            self.tenant.policed = 20
+            self.tenant.enacted = None
+
+            run_playbook.return_value = True
+
+            self.syncstep.sync_record(self.tenant)
+
+            run_playbook.assert_called()
+
+            attrs = run_playbook.call_args[0][1]
+
+            self.assertEqual(attrs.get("username"), "ubuntu")
+            self.assertEqual(attrs.get("ansible_tag"), "VSGServiceInstance_401")
+            self.assertEqual(attrs.get("instance_name"), "testinstance1_name")
+            self.assertEqual(attrs.get("host_name"), None) # XXX
+            self.assertEqual(attrs.get("private_key"), "fakekey\n")
+            self.assertEqual(attrs.get("ssh_ip"), "1.2.3.4")
+            self.assertEqual(attrs.get("instance_id"), "testinstance1_instance_id")
+
+            self.assertEqual(attrs.get("s_tags"), [111])
+            self.assertEqual(attrs.get("c_tags"), [222])
+            self.assertEqual(attrs.get("docker_remote_image_name"), "reg/vsg_docker")
+            self.assertEqual(attrs.get("docker_local_image_name"), "reg/vsg_docker")
+            self.assertEqual(attrs.get("docker_opts"), "--insecure-registry reg")
+            self.assertEqual(attrs.get("dnsdemux_ip"), "none")
+            self.assertEqual(attrs.get("cdn_prefixes"), [])
+            self.assertEqual(attrs.get("full_setup"), True)
+            self.assertEqual(attrs.get("isolation"), "vm")
+            self.assertEqual(attrs.get("safe_browsing_macs"), [])
+            self.assertEqual(attrs.get("container_name"), "vsg-111-222")
+            self.assertEqual(attrs.get("dns_servers"), ["dnsone", "dnstwo"])
+            self.assertEqual(attrs.get("url_filter_kind"), None)
+
+            self.assertEqual(attrs.get("firewall_rules"), "")
+            self.assertEqual(attrs.get("firewall_enable"), False)
+            self.assertEqual(attrs.get("url_filter_enable"), False)
+            self.assertEqual(attrs.get("url_filter_level"), "PG")
+            self.assertEqual(attrs.get("cdn_enable"), False)
+            self.assertEqual(attrs.get("uplink_speed"), 1000000000)
+            self.assertEqual(attrs.get("downlink_speed"), 1000000000)
+            self.assertEqual(attrs.get("enable_uverse"), True)
+            self.assertEqual(attrs.get("status"), "enabled")
+
+if __name__ == '__main__':
+    unittest.main()
+
+
