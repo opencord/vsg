@@ -29,8 +29,5 @@ topology_template:
           base_url: file:///opt/xos_services/vsg/xos/
           # The following will concatenate with base_url automatically, if
           # base_url is non-null.
-          xproto: ./
-          tosca_resource: tosca/resources/vsgservice.py
           private_key: file:///opt/xos/key_import/vsg_rsa
           public_key: file:///opt/xos/key_import/vsg_rsa.pub
-
