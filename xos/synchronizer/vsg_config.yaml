@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-name: vsg-synchronizer
+name: vsg
 accessor:
   username: xosadmin@opencord.org
   password: "@/opt/xos/services/vsg/credentials/xosadmin@opencord.org"
@@ -22,3 +22,4 @@ dependency_graph: "/opt/xos/synchronizers/vsg/model-deps"
 steps_dir: "/opt/xos/synchronizers/vsg/steps"
 sys_dir: "/opt/xos/synchronizers/vsg/sys"
 model_policies_dir: "/opt/xos/synchronizers/vsg/model_policies"
+models_dir: "/opt/xos/synchronizers/vsg/models"
