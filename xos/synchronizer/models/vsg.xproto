@@ -1,6 +1,7 @@
 option name = "vsg";
 option app_label = "vsg";
 option kind = "vCPE";
+option legacy="True";
 
 message VSGService (Service){
     option verbose_name = "vSG Service";
