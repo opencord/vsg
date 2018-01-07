@@ -27,9 +27,17 @@ if not os.path.exists(os.path.join(test_path, "new_base")):
     xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
     services_dir=os.path.join(xos_dir, "../../xos_services")
 
-# ---------------------------------------------------------------------------------------------------------------------
-# End Model Policy Testing Framework
-# ---------------------------------------------------------------------------------------------------------------------
+# While transitioning from static to dynamic load, the path to find neighboring xproto files has changed. So check
+# both possible locations...
+def get_models_fn(service_name, xproto_name):
+    name = os.path.join(service_name, "xos", xproto_name)
+    if os.path.exists(os.path.join(services_dir, name)):
+        return name
+    else:
+        name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
+        if os.path.exists(os.path.join(services_dir, name)):
+            return name
+    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
 
 class TestModelPolicyVsgTenant(unittest.TestCase):
     def setUp(self):
@@ -45,7 +53,8 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         Config.init(config, 'synchronizer-config-schema.yaml')
 
         from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        build_mock_modelaccessor(xos_dir, services_dir, ["vsg/xos/vsg.xproto", "addressmanager/xos/addressmanager.xproto"])
+        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("vsg", "vsg.xproto"),
+                                                         get_models_fn("addressmanager", "addressmanager.xproto")])
 
         import synchronizers.new_base.modelaccessor
         import synchronizers.new_base.model_policies.model_policy_tenantwithcontainer
