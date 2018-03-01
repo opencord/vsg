@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-from synchronizers.new_base.modelaccessor import *
+from synchronizers.new_base.modelaccessor import VSGServiceInstance, AddressManagerServiceInstance, VSGService, Tag, Flavor, Instance, Port, NetworkParameterType, NetworkParameter, ServiceInstance, model_accessor
 from synchronizers.new_base.model_policies.model_policy_tenantwithcontainer import TenantWithContainerPolicy, LeastLoadedNodeScheduler
 from synchronizers.new_base.exceptions import *
 
