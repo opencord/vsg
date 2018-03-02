@@ -16,6 +16,7 @@ message VSGService (Service){
 
 message VSGServiceInstance (TenantWithContainer){
     option verbose_name = "vSG Service Instance";
+    option owner_class_name="VSGService";
     
     optional string last_ansible_hash = 1 [db_index = False, max_length = 128, null = True, content_type = "stripped", blank = True];
 }
