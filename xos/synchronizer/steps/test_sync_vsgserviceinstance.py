@@ -99,8 +99,7 @@ class TestSyncVSGServiceInstance(unittest.TestCase):
                                                      "url_filter_level", "cdn_enable", "uplink_speed",
                                                      "downlink_speed", "enable_uverse", "status"])
         self.volt = MagicMock(s_tag=111, c_tag=222, subscriber=self.subscriber)
-        self.tenant = VSGServiceInstance(creator=self.user,
-                                         id=401,
+        self.tenant = VSGServiceInstance(id=401,
                                          volt=self.volt,
                                          owner=self.service,
                                          wan_container_ip="10.7.1.3",

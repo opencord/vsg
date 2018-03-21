@@ -79,7 +79,7 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
         self.policy = VSGServiceInstancePolicy()
         self.tenant = VSGServiceInstance()
         self.user = User(email="testadmin@test.org")
-        self.tenant = VSGServiceInstance(creator=self.user, id=1)
+        self.tenant = VSGServiceInstance(id=1)
         self.flavor = Flavor(name="m1.small")
         self.npt_ctag = NetworkParameterType(name="c_tag", id=1)
         self.npt_stag = NetworkParameterType(name="s_tag", id=2)
@@ -378,7 +378,6 @@ class TestModelPolicyVsgTenant(unittest.TestCase):
 
             # make sure Instance was created
             self.assertNotEqual(instance, None)
-            self.assertEqual(instance.creator.email, "testadmin@test.org")
             self.assertEqual(instance.image.name, "trusty-server-multi-nic")
             self.assertEqual(instance.flavor.name, "m1.small")
             self.assertEqual(instance.isolation, "vm")
