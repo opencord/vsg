@@ -106,14 +106,17 @@ class VSGServiceInstancePolicy(TenantWithContainerPolicy):
         assert (slice is not None)
         assert (node is not None)
         assert (desired_image is not None)
-        assert (service_instance.creator is not None)
         assert (node.site_deployment.deployment is not None)
         assert (desired_image is not None)
+
+        assert(service_instance.volt)
+        assert(service_instance.volt.subscriber)
+        assert(service_instance.volt.subscriber.creator)
 
         instance = Instance(slice=slice,
                             node=node,
                             image=desired_image,
-                            creator=service_instance.creator,
+                            creator=service_instance.volt.subscriber.creator,
                             deployment=node.site_deployment.deployment,
                             flavor=flavors[0],
                             isolation=slice.default_isolation,
