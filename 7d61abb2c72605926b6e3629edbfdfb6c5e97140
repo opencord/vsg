@@ -22,6 +22,30 @@
       "revId": "7d61abb2c72605926b6e3629edbfdfb6c5e97140",
       "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f78fa96e_b4d0dd79",
+        "filename": "xos/synchronizer/model_policies/model_policy_vsgserviceinstance.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2018-04-23T23:46:03Z",
+      "side": 1,
+      "message": "You\u0027re right, it\u0027s safe to remove. I\u0027ll revise.",
+      "parentUuid": "3fbe9e18_86e9561a",
+      "range": {
+        "startLine": 84,
+        "startChar": 23,
+        "endLine": 84,
+        "endChar": 26
+      },
+      "revId": "7d61abb2c72605926b6e3629edbfdfb6c5e97140",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
     }
   ]
 }
