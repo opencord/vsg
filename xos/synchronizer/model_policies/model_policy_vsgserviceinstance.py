@@ -17,6 +17,7 @@
 from synchronizers.new_base.modelaccessor import VSGServiceInstance, AddressManagerServiceInstance, VSGService, Tag, Flavor, Instance, Port, NetworkParameterType, NetworkParameter, ServiceInstance, model_accessor
 from synchronizers.new_base.model_policies.model_policy_tenantwithcontainer import TenantWithContainerPolicy, LeastLoadedNodeScheduler
 from synchronizers.new_base.exceptions import *
+from xosapi.orm import ORMGenericObjectNotFoundException
 
 class VSGServiceInstancePolicy(TenantWithContainerPolicy):
     model_name = "VSGServiceInstance"
@@ -80,8 +81,12 @@ class VSGServiceInstancePolicy(TenantWithContainerPolicy):
 
     def find_instance_for_s_tag(self, s_tag):
         tags = Tag.objects.filter(name="s_tag", value=s_tag)
-        if tags:
-            return tags[0].content_object
+        for tag in tags:
+            try:
+                return tag.content_object
+            except ORMGenericObjectNotFoundException:
+                self.logger.warning("Dangling Instance reference for s-tag %s. Deleting Tag object." % s_tag)
+                tag.delete()
 
         return None
 
