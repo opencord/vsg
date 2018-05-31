@@ -79,15 +79,8 @@ class SyncVSGServiceInstance(SyncInstanceUsingAnsible):
 
         full_setup = True
 
+        # NOTE(smbaker): User devices removed as part of CORD-3116
         safe_macs=[]
-        if vsg_service.url_filter_kind == "safebrowsing":
-            if o.volt and o.volt.subscriber:
-                for user in o.volt.subscriber.devices and hasattr(o.volt.subscriber, "devices"):
-                    level = user.get("level",None)
-                    mac = user.get("mac",None)
-                    if level in ["G", "PG"]:
-                        if mac:
-                            safe_macs.append(mac)
 
         docker_opts = []
         if vsg_service.docker_insecure_registry:
